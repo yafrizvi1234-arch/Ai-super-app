@@ -7,8 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Gemini মডেল (env দিয়ে সহজেই বদলানো যাবে)
-const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-
+const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 // --- Middleware ---
 app.use(cors());
 app.use(express.json());
