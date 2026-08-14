@@ -1,4 +1,4 @@
-DOCTYPE html>
+<!DOCTYPE html>
 <html lang="bn">
 <head>
   <meta charset="UTF-8">
@@ -6,56 +6,90 @@ DOCTYPE html>
   <title>AI Super App</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+
   <!-- Header -->
   <header class="app-header">
     <h1>🤖 AI Super App</h1>
   </header>
 
+  <!-- AI Model Selector -->
+  <section class="ai-selector-area">
+
+    <label for="aiModel">🧠 AI Model</label>
+
+    <select id="aiModel">
+      <option value="gemini">Gemini ✅</option>
+      <option value="deepseek">DeepSeek 🔜</option>
+      <option value="chatgpt">ChatGPT 🔜</option>
+      <option value="claude">Claude 🔜</option>
+      <option value="kimi">Kimi 🔜</option>
+      <option value="perplexity">Perplexity AI 🔜</option>
+    </select>
+
+    <p id="modelStatus">
+      Gemini বর্তমানে সক্রিয়
+    </p>
+
+  </section>
+
   <!-- Chat Container -->
   <main class="chat-container" id="chatContainer">
+
     <div class="welcome-message">
       <p>👋 হ্যালো! আমি আপনার AI সহায়ক। কিছু জিজ্ঞাসা করুন।</p>
     </div>
+
   </main>
 
   <!-- Input Area -->
   <div class="input-area">
-    <input 
-      type="text" 
-      id="messageInput" 
-      placeholder="আপনার মেসেজ লিখুন..." 
+
+    <input
+      type="text"
+      id="messageInput"
+      placeholder="আপনার মেসেজ লিখুন..."
       autocomplete="off"
     />
+
     <button id="sendBtn" aria-label="Send message">
       <span class="send-icon">➤</span>
     </button>
+
   </div>
 
   <!-- Bottom Navigation -->
   <nav class="bottom-nav">
+
     <button class="nav-item active" data-tab="chat">
       <span class="nav-icon">💬</span>
       <span class="nav-label">Chat</span>
     </button>
+
     <button class="nav-item" data-tab="image">
       <span class="nav-icon">🎨</span>
       <span class="nav-label">Image</span>
     </button>
+
     <button class="nav-item" data-tab="video">
       <span class="nav-icon">🎬</span>
       <span class="nav-label">Video</span>
     </button>
+
     <button class="nav-item" data-tab="voice">
       <span class="nav-icon">🎤</span>
       <span class="nav-label">Voice</span>
     </button>
+
     <button class="nav-item" data-tab="tools">
       <span class="nav-icon">🛠</span>
       <span class="nav-label">Tools</span>
     </button>
+
   </nav>
 
   <script src="app.js"></script>
+
 </body>
 </html>
