@@ -8,25 +8,20 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // =====================================================
-// AI SUPER APP - AI ROUTER
-// Current active provider: Gemini
-// Future providers: Llama, DeepSeek, Kimi, ChatGPT, Claude
+// AI SUPER APP
+// Gemini = Main Brain
+// Test Tool = get_app_status
 // =====================================================
 
-// Gemini model
 const MODEL_NAME =
   process.env.GEMINI_MODEL || 'gemini-3.6-flash';
-
-// -----------------------------------------------------
-// Middleware
-// -----------------------------------------------------
 
 app.use(cors());
 app.use(express.json());
 
-// -----------------------------------------------------
-// Gemini API Key
-// -----------------------------------------------------
+// =====================================================
+// GEMINI API KEY
+// =====================================================
 
 const apiKey = process.env.GEMINI_API_KEY;
 
@@ -34,134 +29,127 @@ if (!apiKey) {
   console.error(
     '❌ GEMINI_API_KEY environment variable is not set.'
   );
-
   process.exit(1);
 }
-
-// -----------------------------------------------------
-// Gemini Client
-// -----------------------------------------------------
 
 const genAI = new GoogleGenAI({
   apiKey
 });
 
 // =====================================================
-// PROVIDERS
+// TEST TOOL DEFINITION
 // =====================================================
 
-const PROVIDERS = {
-  gemini: {
-    name: 'Gemini',
-    enabled: true
-  },
-
-  llama: {
-    name: 'Llama',
-    enabled: false
-  },
-
-  deepseek: {
-    name: 'DeepSeek',
-    enabled: false
-  },
-
-  kimi: {
-    name: 'Kimi',
-    enabled: false
-  },
-
-  chatgpt: {
-    name: 'ChatGPT',
-    enabled: false
-  },
-
-  claude: {
-    name: 'Claude',
-    enabled: false
+const getAppStatusTool = {
+  type: 'function',
+  name: 'get_app_status',
+  description:
+    'Returns the current status of the AI Super App backend. Use this when the user asks whether the app or backend is working.',
+  parameters: {
+    type: 'object',
+    properties: {},
+    required: []
   }
 };
 
 // =====================================================
-// GEMINI PROVIDER
+// TOOL EXECUTION
 // =====================================================
 
-async function getGeminiReply(userMessage) {
-
-  const response =
-    await genAI.models.generateContent({
-
-      model: MODEL_NAME,
-
-      contents: userMessage
-
-    });
-
-  return response.text;
+function getAppStatus() {
+  return {
+    status: 'online',
+    router: 'active',
+    mainBrain: 'Gemini',
+    testTool: 'working'
+  };
 }
 
 // =====================================================
-// AI ROUTER
+// GEMINI BRAIN
 // =====================================================
 
-async function aiRouter(userMessage, requestedProvider = 'gemini') {
+async function runGeminiBrain(userMessage) {
 
-  // Check requested provider
-  const provider =
-    PROVIDERS[requestedProvider];
+  let input = userMessage;
+  let previousInteractionId = null;
 
-  // Unknown provider → Gemini fallback
-  if (!provider) {
+  // Allow a few tool rounds
+  for (let round = 0; round < 3; round++) {
 
-    console.log(
-      `⚠️ Unknown provider "${requestedProvider}". Using Gemini.`
-    );
+    const interaction =
+      await genAI.interactions.create({
 
-    return {
-      reply: await getGeminiReply(userMessage),
-      provider: 'gemini'
-    };
+        model: MODEL_NAME,
+
+        input,
+
+        tools: [
+          getAppStatusTool
+        ],
+
+        previous_interaction_id:
+          previousInteractionId
+
+      });
+
+    const functionResults = [];
+
+    for (const step of interaction.steps) {
+
+      if (step.type === 'function_call') {
+
+        console.log(
+          `🧠 Gemini requested tool: ${step.name}`
+        );
+
+        let result;
+
+        if (step.name === 'get_app_status') {
+
+          result = getAppStatus();
+
+        } else {
+
+          result = {
+            error: 'Unknown tool'
+          };
+
+        }
+
+        functionResults.push({
+
+          type: 'function_result',
+
+          name: step.name,
+
+          call_id: step.id,
+
+          result: [
+            {
+              type: 'text',
+              text: JSON.stringify(result)
+            }
+          ]
+
+        });
+      }
+    }
+
+    // No tool requested → final answer
+    if (functionResults.length === 0) {
+
+      return interaction.output_text;
+    }
+
+    // Send tool results back to Gemini
+    input = functionResults;
+
+    previousInteractionId =
+      interaction.id;
   }
 
-  // Provider exists but isn't connected yet
-  if (!provider.enabled) {
-
-    console.log(
-      `⚠️ ${provider.name} is not connected. Using Gemini fallback.`
-    );
-
-    return {
-      reply: await getGeminiReply(userMessage),
-      provider: 'gemini'
-    };
-  }
-
-  // ---------------------------------------------------
-  // Gemini
-  // ---------------------------------------------------
-
-  if (requestedProvider === 'gemini') {
-
-    return {
-      reply: await getGeminiReply(userMessage),
-      provider: 'gemini'
-    };
-  }
-
-  // ---------------------------------------------------
-  // Future providers
-  // ---------------------------------------------------
-
-  // Llama → future
-  // DeepSeek → future
-  // Kimi → future
-  // ChatGPT → future
-  // Claude → future
-
-  return {
-    reply: await getGeminiReply(userMessage),
-    provider: 'gemini'
-  };
+  return 'Tool execution limit reached. Please try again.';
 }
 
 // =====================================================
@@ -176,7 +164,11 @@ app.get('/api/health', (req, res) => {
 
     router: 'active',
 
-    defaultProvider: 'gemini',
+    mainBrain: 'gemini',
+
+    tools: [
+      'get_app_status'
+    ],
 
     timestamp:
       new Date().toISOString()
@@ -193,14 +185,7 @@ app.post('/api/chat', async (req, res) => {
 
   try {
 
-    const {
-      message,
-      model
-    } = req.body;
-
-    // -------------------------------------------------
-    // Validate message
-    // -------------------------------------------------
+    const { message } = req.body;
 
     if (
       !message ||
@@ -217,39 +202,22 @@ app.post('/api/chat', async (req, res) => {
 
     }
 
-    // -------------------------------------------------
-    // Requested model
-    // -------------------------------------------------
-
-    const requestedProvider =
-      typeof model === 'string' &&
-      model.trim().length > 0
-        ? model.trim().toLowerCase()
-        : 'gemini';
-
     console.log(
-      `🤖 Request → ${requestedProvider}`
+      `💬 User: ${message.trim()}`
     );
 
-    // -------------------------------------------------
-    // AI Router
-    // -------------------------------------------------
-
-    const result =
-      await aiRouter(
-        message.trim(),
-        requestedProvider
+    const reply =
+      await runGeminiBrain(
+        message.trim()
       );
-
-    // -------------------------------------------------
-    // Response
-    // -------------------------------------------------
 
     res.json({
 
-      reply: result.reply,
+      reply,
 
-      provider: result.provider
+      provider: 'gemini',
+
+      brain: 'gemini'
 
     });
 
@@ -274,7 +242,7 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // =====================================================
-// 404 HANDLER
+// 404
 // =====================================================
 
 app.use((req, res) => {
@@ -318,11 +286,11 @@ app.listen(PORT, () => {
   );
 
   console.log(
-    '🧠 AI Router: ACTIVE'
+    '🧠 Gemini Brain: ACTIVE'
   );
 
   console.log(
-    '🤖 Current provider: Gemini'
+    '🛠️ Test Tool: get_app_status'
   );
 
 });
