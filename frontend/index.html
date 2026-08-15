@@ -2,92 +2,578 @@
 <html lang="bn">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>AI Super App</title>
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, user-scalable=no"
+  >
+
+  <meta
+    name="theme-color"
+    content="#050714"
+  >
+
+  <meta
+    name="description"
+    content="AI Super App - Infinity Futuristic AI Workspace"
+  >
+
+  <title>AI Super App — Infinity AI</title>
+
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <!-- Header -->
-  <header class="app-header">
-    <h1>🤖 AI Super App</h1>
-  </header>
+  <!-- =====================================================
+       FUTURISTIC BACKGROUND
+  ====================================================== -->
 
-  <!-- AI Model Selector -->
-  <section class="ai-selector-area">
+  <div class="universe-bg">
 
-    <label for="aiModel">🧠 AI Model</label>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
 
-    <select id="aiModel">
-      <option value="gemini">Gemini ✅</option>
-      <option value="deepseek">DeepSeek 🔜</option>
-      <option value="chatgpt">ChatGPT 🔜</option>
-      <option value="claude">Claude 🔜</option>
-      <option value="kimi">Kimi 🔜</option>
-      <option value="perplexity">Perplexity AI 🔜</option>
-    </select>
+    <div class="grid-overlay"></div>
 
-    <p id="modelStatus">
-      Gemini বর্তমানে সক্রিয়
-    </p>
-
-  </section>
-
-  <!-- Chat Container -->
-  <main class="chat-container" id="chatContainer">
-
-    <div class="welcome-message">
-      <p>👋 হ্যালো! আমি আপনার AI সহায়ক। কিছু জিজ্ঞাসা করুন।</p>
-    </div>
-
-  </main>
-
-  <!-- Input Area -->
-  <div class="input-area">
-
-    <input
-      type="text"
-      id="messageInput"
-      placeholder="আপনার মেসেজ লিখুন..."
-      autocomplete="off"
-    />
-
-    <button id="sendBtn" aria-label="Send message">
-      <span class="send-icon">➤</span>
-    </button>
+    <div class="stars"></div>
 
   </div>
 
-  <!-- Bottom Navigation -->
-  <nav class="bottom-nav">
 
-    <button class="nav-item active" data-tab="chat">
-      <span class="nav-icon">💬</span>
-      <span class="nav-label">Chat</span>
-    </button>
+  <!-- =====================================================
+       MAIN APP
+  ====================================================== -->
 
-    <button class="nav-item" data-tab="image">
-      <span class="nav-icon">🎨</span>
-      <span class="nav-label">Image</span>
-    </button>
+  <div class="app-shell">
 
-    <button class="nav-item" data-tab="video">
-      <span class="nav-icon">🎬</span>
-      <span class="nav-label">Video</span>
-    </button>
 
-    <button class="nav-item" data-tab="voice">
-      <span class="nav-icon">🎤</span>
-      <span class="nav-label">Voice</span>
-    </button>
+    <!-- ===================================================
+         HEADER
+    ==================================================== -->
 
-    <button class="nav-item" data-tab="tools">
-      <span class="nav-icon">🛠</span>
-      <span class="nav-label">Tools</span>
-    </button>
+    <header class="app-header">
 
-  </nav>
+      <div class="brand-area">
+
+        <div class="brand-logo">
+          <span>✦</span>
+        </div>
+
+        <div class="brand-text">
+
+          <h1>AI Super App</h1>
+
+          <div class="brand-status">
+            <span class="status-dot"></span>
+            <span>INFINITY AI CORE ONLINE</span>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="header-actions">
+
+        <button
+          class="header-btn"
+          id="notificationBtn"
+          aria-label="Notifications"
+        >
+          ◇
+        </button>
+
+        <button
+          class="header-btn"
+          id="menuBtn"
+          aria-label="Menu"
+        >
+          ⋮
+        </button>
+
+      </div>
+
+    </header>
+
+
+    <!-- ===================================================
+         AI CORE STATUS
+    ==================================================== -->
+
+    <section class="ai-core-card">
+
+      <div class="core-left">
+
+        <div class="core-icon">
+          🧠
+        </div>
+
+        <div>
+
+          <div class="core-label">
+            AI CORE
+          </div>
+
+          <div class="core-title">
+            Gemini Intelligence
+          </div>
+
+          <div class="core-subtitle">
+            Main Brain • Smart Routing Active
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="core-status">
+
+        <span class="pulse-dot"></span>
+
+        <span>ONLINE</span>
+
+      </div>
+
+    </section>
+
+
+    <!-- ===================================================
+         AI MODEL SELECTOR
+    ==================================================== -->
+
+    <section class="ai-selector-area">
+
+      <div class="section-heading">
+
+        <div>
+
+          <span class="section-kicker">
+            INTELLIGENCE ENGINE
+          </span>
+
+          <h2>
+            🧠 AI Model
+          </h2>
+
+        </div>
+
+        <span class="live-badge">
+          LIVE
+        </span>
+
+      </div>
+
+
+      <div class="selector-wrapper">
+
+        <div class="selector-icon">
+          ⚡
+        </div>
+
+        <select id="aiModel">
+
+          <!-- MAIN -->
+
+          <option value="gemini">
+            Gemini • Main Brain ✅
+          </option>
+
+          <!-- FALLBACK -->
+
+          <option value="groq">
+            Groq • Fallback ⚡
+          </option>
+
+          <!-- FUTURE PROVIDERS -->
+
+          <option value="deepseek">
+            DeepSeek • Coming Soon 🔜
+          </option>
+
+          <option value="chatgpt">
+            ChatGPT • Coming Soon 🔜
+          </option>
+
+          <option value="claude">
+            Claude • Coming Soon 🔜
+          </option>
+
+          <option value="kimi">
+            Kimi • Coming Soon 🔜
+          </option>
+
+          <option value="perplexity">
+            Perplexity AI • Coming Soon 🔜
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div
+        id="modelStatus"
+        class="model-status"
+      >
+        <span class="mini-status-dot"></span>
+
+        <span>
+          Gemini বর্তমানে সক্রিয় • Groq fallback প্রস্তুত
+        </span>
+
+      </div>
+
+    </section>
+
+
+    <!-- ===================================================
+         QUICK AI TOOLS
+    ==================================================== -->
+
+    <section class="quick-tools">
+
+      <div class="section-heading compact">
+
+        <div>
+
+          <span class="section-kicker">
+            AI POWER
+          </span>
+
+          <h2>
+            Quick Tools
+          </h2>
+
+        </div>
+
+      </div>
+
+
+      <div class="tool-grid">
+
+        <button
+          class="tool-card"
+          data-tool="image"
+        >
+
+          <span class="tool-icon">
+            🎨
+          </span>
+
+          <span class="tool-name">
+            Image
+          </span>
+
+          <span class="tool-status">
+            Soon
+          </span>
+
+        </button>
+
+
+        <button
+          class="tool-card"
+          data-tool="video"
+        >
+
+          <span class="tool-icon">
+            🎬
+          </span>
+
+          <span class="tool-name">
+            Video
+          </span>
+
+          <span class="tool-status">
+            Soon
+          </span>
+
+        </button>
+
+
+        <button
+          class="tool-card"
+          data-tool="voice"
+        >
+
+          <span class="tool-icon">
+            🎤
+          </span>
+
+          <span class="tool-name">
+            Voice
+          </span>
+
+          <span class="tool-status">
+            Soon
+          </span>
+
+        </button>
+
+
+        <button
+          class="tool-card"
+          data-tool="tools"
+        >
+
+          <span class="tool-icon">
+            🛠️
+          </span>
+
+          <span class="tool-name">
+            AI Tools
+          </span>
+
+          <span class="tool-status">
+            Explore
+          </span>
+
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- ===================================================
+         CHAT AREA
+    ==================================================== -->
+
+    <main
+      class="chat-container"
+      id="chatContainer"
+    >
+
+      <div class="welcome-message">
+
+        <div class="welcome-orb">
+          ✦
+        </div>
+
+        <div class="welcome-content">
+
+          <span class="welcome-kicker">
+            INFINITY AI SYSTEM
+          </span>
+
+          <h2>
+            Welcome to your
+            <span>AI Super App</span>
+          </h2>
+
+          <p>
+            Gemini is ready to assist you.
+            Ask anything, create ideas and explore
+            the next generation of AI.
+          </p>
+
+          <div class="welcome-chips">
+
+            <button class="suggestion-chip">
+              💡 Ask anything
+            </button>
+
+            <button class="suggestion-chip">
+              ✍️ Write something
+            </button>
+
+            <button class="suggestion-chip">
+              🚀 Create an idea
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+
+
+    <!-- ===================================================
+         INPUT AREA
+    ==================================================== -->
+
+    <section class="input-section">
+
+      <div class="input-glow"></div>
+
+      <div class="input-area">
+
+        <button
+          class="input-action"
+          id="attachBtn"
+          aria-label="Attach"
+        >
+          ＋
+        </button>
+
+
+        <input
+          type="text"
+          id="messageInput"
+          placeholder="Ask Infinity AI anything..."
+          autocomplete="off"
+        />
+
+
+        <button
+          id="sendBtn"
+          class="send-button"
+          aria-label="Send message"
+        >
+
+          <span class="send-icon">
+            ➤
+          </span>
+
+        </button>
+
+      </div>
+
+
+      <div class="input-info">
+
+        <span>
+          ✦ Gemini Core
+        </span>
+
+        <span>
+          •
+        </span>
+
+        <span>
+          Groq Fallback
+        </span>
+
+        <span>
+          •
+        </span>
+
+        <span>
+          AI Super App
+        </span>
+
+      </div>
+
+    </section>
+
+
+    <!-- ===================================================
+         BOTTOM NAVIGATION
+    ==================================================== -->
+
+    <nav class="bottom-nav">
+
+      <button
+        class="nav-item active"
+        data-tab="chat"
+      >
+
+        <span class="nav-icon">
+          ◉
+        </span>
+
+        <span class="nav-label">
+          Chat
+        </span>
+
+      </button>
+
+
+      <button
+        class="nav-item"
+        data-tab="image"
+      >
+
+        <span class="nav-icon">
+          ◈
+        </span>
+
+        <span class="nav-label">
+          Image
+        </span>
+
+      </button>
+
+
+      <button
+        class="nav-item"
+        data-tab="video"
+      >
+
+        <span class="nav-icon">
+          ▶
+        </span>
+
+        <span class="nav-label">
+          Video
+        </span>
+
+      </button>
+
+
+      <button
+        class="nav-item"
+        data-tab="voice"
+      >
+
+        <span class="nav-icon">
+          ◉
+        </span>
+
+        <span class="nav-label">
+          Voice
+        </span>
+
+      </button>
+
+
+      <button
+        class="nav-item"
+        data-tab="tools"
+      >
+
+        <span class="nav-icon">
+          ⌘
+        </span>
+
+        <span class="nav-label">
+          Tools
+        </span>
+
+      </button>
+
+    </nav>
+
+
+    <!-- ===================================================
+         FOOTER
+    ==================================================== -->
+
+    <footer class="app-footer">
+
+      <span>
+        INFINITY AI
+      </span>
+
+      <span class="footer-line"></span>
+
+      <span>
+        NEXT GENERATION INTELLIGENCE
+      </span>
+
+    </footer>
+
+  </div>
+
+
+  <!-- =====================================================
+       JAVASCRIPT
+  ====================================================== -->
 
   <script src="app.js"></script>
 
