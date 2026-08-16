@@ -1,120 +1,211 @@
 // ===================================
-//   AI Super App - Frontend Logic
-//   Current Provider: Gemini
-//   Backend: Render
+// INFINITY AI — Frontend Logic
+// Main Brain: Infinity AI
+// Backend: Gemini + Groq Fallback
 // ===================================
 
-const API_URL = 'https://ai-super-app-3fr7.onrender.com/api/chat';
+const API_URL =
+  'https://ai-super-app-3fr7.onrender.com/api/chat';
 
-// ---------- DOM Elements ----------
-const chatContainer = document.getElementById('chatContainer');
-const messageInput = document.getElementById('messageInput');
-const sendBtn = document.getElementById('sendBtn');
-const navItems = document.querySelectorAll('.nav-item');
 
-const aiModel = document.getElementById('aiModel');
-const modelStatus = document.getElementById('modelStatus');
+// =========================================================
+// DOM
+// =========================================================
 
-// ---------- State ----------
+const chatContainer =
+  document.getElementById('chatContainer');
+
+const messageInput =
+  document.getElementById('messageInput');
+
+const sendBtn =
+  document.getElementById('sendBtn');
+
+const navItems =
+  document.querySelectorAll('.nav-item');
+
+const aiModel =
+  document.getElementById('aiModel');
+
+const modelStatus =
+  document.getElementById('modelStatus');
+
+const plusBtn =
+  document.getElementById('plusBtn');
+
+const plusMenuOverlay =
+  document.getElementById('plusMenuOverlay');
+
+const closePlusBtn =
+  document.getElementById('closePlusBtn');
+
+const toolItems =
+  document.querySelectorAll('.tool-item');
+
+const galleryInput =
+  document.getElementById('galleryInput');
+
+const cameraInput =
+  document.getElementById('cameraInput');
+
+
+// =========================================================
+// STATE
+// =========================================================
+
 let isWaitingForResponse = false;
 
-// Gemini is currently the only connected provider
-let selectedModel = 'gemini';
 
-// ---------- Available AI Providers ----------
-// enabled: true = actually connected
-// enabled: false = coming soon
-const AI_PROVIDERS = {
+// =========================================================
+// AI CAPABILITIES
+// These are UI capabilities.
+// They do NOT manually switch backend providers.
+// =========================================================
+
+const AI_CAPABILITIES = {
+
   gemini: {
-    name: 'Gemini',
-    enabled: true
+    name: 'Infinity AI Core'
   },
 
   deepseek: {
-    name: 'DeepSeek',
-    enabled: false
+    name: 'Deep Reasoning'
   },
 
   chatgpt: {
-    name: 'ChatGPT',
-    enabled: false
+    name: 'Advanced Assistant'
   },
 
   claude: {
-    name: 'Claude',
-    enabled: false
+    name: 'Creative Intelligence'
   },
 
   kimi: {
-    name: 'Kimi',
-    enabled: false
+    name: 'Long Context AI'
   },
 
   perplexity: {
-    name: 'Perplexity AI',
-    enabled: false
+    name: 'Web Intelligence'
   }
+
 };
 
-// ---------- Helper: Scroll to Bottom ----------
+
+// =========================================================
+// SCROLL
+// =========================================================
+
 function scrollToBottom() {
-  chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  if (!chatContainer) return;
+
+  chatContainer.scrollTop =
+    chatContainer.scrollHeight;
+
 }
 
-// ---------- Remove Welcome Message ----------
+
+// =========================================================
+// REMOVE WELCOME
+// =========================================================
+
 function removeWelcomeMessage() {
-  const welcome = document.querySelector('.welcome-message');
+
+  const welcome =
+    document.querySelector('.welcome-message');
 
   if (welcome) {
     welcome.remove();
   }
+
 }
 
-// ---------- Add Message Bubble ----------
-function addMessageBubble(text, type) {
+
+// =========================================================
+// ADD MESSAGE
+// =========================================================
+
+function addMessageBubble(
+  text,
+  type
+) {
+
   removeWelcomeMessage();
 
-  const bubble = document.createElement('div');
+  const bubble =
+    document.createElement('div');
 
-  bubble.classList.add('message');
+  bubble.classList.add(
+    'message'
+  );
+
 
   if (type === 'user') {
-    bubble.classList.add('user-message');
+
+    bubble.classList.add(
+      'user-message'
+    );
+
   }
 
   else if (type === 'ai') {
-    bubble.classList.add('ai-message');
+
+    bubble.classList.add(
+      'ai-message'
+    );
+
   }
 
   else if (type === 'loading') {
+
     bubble.classList.add(
       'ai-message',
       'ai-loading'
     );
+
   }
 
   else if (type === 'error') {
+
     bubble.classList.add(
       'ai-message',
       'error-message'
     );
+
   }
+
 
   bubble.textContent = text;
 
-  chatContainer.appendChild(bubble);
+  chatContainer.appendChild(
+    bubble
+  );
 
   scrollToBottom();
 
   return bubble;
+
 }
 
-// ---------- Replace Bubble ----------
-function replaceBubble(oldBubble, text, type) {
 
-  oldBubble.textContent = text;
+// =========================================================
+// REPLACE MESSAGE
+// =========================================================
 
-  oldBubble.className = 'message';
+function replaceBubble(
+  oldBubble,
+  text,
+  type
+) {
+
+  if (!oldBubble) return;
+
+  oldBubble.textContent =
+    text;
+
+  oldBubble.className =
+    'message';
+
 
   if (type === 'ai') {
 
@@ -133,76 +224,59 @@ function replaceBubble(oldBubble, text, type) {
 
   }
 
+
   scrollToBottom();
+
 }
 
+
 // =========================================================
-// AI MODEL SELECTOR
+// STATUS
 // =========================================================
 
 function updateModelStatus() {
 
-  const provider = AI_PROVIDERS[selectedModel];
+  if (!modelStatus) return;
 
-  if (!provider) {
-    return;
-  }
+  modelStatus.textContent =
+    'Infinity AI Core Online ✓';
 
-  if (provider.enabled) {
+  modelStatus.style.color =
+    '#22c55e';
 
-    modelStatus.textContent =
-      `${provider.name} বর্তমানে সক্রিয় ✅`;
-
-    modelStatus.style.color = '#22c55e';
-
-  }
-
-  else {
-
-    modelStatus.textContent =
-      `${provider.name} শীঘ্রই আসছে 🔜`;
-
-    modelStatus.style.color = '#818cf8';
-
-  }
 }
 
-// ---------- Model Change ----------
+
+// =========================================================
+// AI CAPABILITY SELECTOR
+// =========================================================
+
 if (aiModel) {
 
-  aiModel.addEventListener('change', () => {
+  aiModel.addEventListener(
+    'change',
+    () => {
 
-    const newModel = aiModel.value;
+      const selected =
+        aiModel.value;
 
-    const provider = AI_PROVIDERS[newModel];
+      const capability =
+        AI_CAPABILITIES[selected];
 
-    if (!provider) {
-      return;
-    }
+      if (!capability) {
+        return;
+      }
 
-    // Provider is not connected yet
-    if (!provider.enabled) {
-
-      // Keep Gemini selected
-      aiModel.value = selectedModel;
-
-      alert(
-        `${provider.name} এখনো সংযুক্ত করা হয়নি। 🔜\n\nবর্তমানে শুধু Gemini কাজ করছে।`
-      );
+      // Do not expose provider names.
+      // Infinity AI remains the visible identity.
 
       updateModelStatus();
 
-      return;
     }
-
-    // Provider is available
-    selectedModel = newModel;
-
-    updateModelStatus();
-
-  });
+  );
 
 }
+
 
 // =========================================================
 // SEND MESSAGE
@@ -210,82 +284,73 @@ if (aiModel) {
 
 async function sendMessage() {
 
+  if (!messageInput) {
+    return;
+  }
+
+
   const userMessage =
     messageInput.value.trim();
 
-  // Empty message
+
   if (!userMessage) {
     return;
   }
 
-  // Prevent double sending
+
   if (isWaitingForResponse) {
     return;
   }
 
-  // Make sure selected provider exists
-  const provider =
-    AI_PROVIDERS[selectedModel];
 
-  if (!provider) {
+  // USER MESSAGE
 
-    addMessageBubble(
-      '⚠️ AI provider পাওয়া যায়নি।',
-      'error'
-    );
-
-    return;
-  }
-
-  // Currently only Gemini is connected
-  if (!provider.enabled) {
-
-    addMessageBubble(
-      `⚠️ ${provider.name} এখনো সংযুক্ত করা হয়নি।`,
-      'error'
-    );
-
-    return;
-  }
-
-  // ---------- User Message ----------
   addMessageBubble(
     userMessage,
     'user'
   );
 
-  // Clear input
+
+  // CLEAR INPUT
+
   messageInput.value = '';
 
   messageInput.focus();
 
-  // ---------- Loading ----------
+
+  // INFINITY AI LOADING
+
   const loadingBubble =
     addMessageBubble(
-      'Gemini চিন্তা করছে... 🤔',
+      'Infinity AI is thinking... 🤔',
       'loading'
     );
 
+
   isWaitingForResponse = true;
+
 
   try {
 
-    const response = await fetch(
-      API_URL,
-      {
-        method: 'POST',
+    const response =
+      await fetch(
+        API_URL,
+        {
+          method: 'POST',
 
-        headers: {
-          'Content-Type': 'application/json'
-        },
+          headers: {
+            'Content-Type':
+              'application/json'
+          },
 
-        body: JSON.stringify({
-          message: userMessage
-        })
-      }
-    );
+          body: JSON.stringify({
+            message:
+              userMessage
+          })
+        }
+      );
 
-    // HTTP error
+
     if (!response.ok) {
 
       throw new Error(
@@ -294,15 +359,16 @@ async function sendMessage() {
 
     }
 
+
     const data =
       await response.json();
 
-    // Check backend response
+
     const aiReply =
       data.reply ||
-      'উত্তর পাওয়া যায়নি।';
+      'Infinity AI could not generate a response.';
 
-    // Replace loading message
+
     replaceBubble(
       loadingBubble,
       aiReply,
@@ -314,13 +380,14 @@ async function sendMessage() {
   catch (error) {
 
     console.error(
-      'API Error:',
+      'Infinity AI API Error:',
       error
     );
 
+
     replaceBubble(
       loadingBubble,
-      '⚠️ AI সার্ভিসে সমস্যা হয়েছে। পরে আবার চেষ্টা করুন।',
+      '⚠️ Infinity AI is temporarily unavailable. Please try again.',
       'error'
     );
 
@@ -328,16 +395,18 @@ async function sendMessage() {
 
   finally {
 
-    isWaitingForResponse = false;
+    isWaitingForResponse =
+      false;
 
   }
+
 }
 
+
 // =========================================================
-// EVENT LISTENERS
+// SEND BUTTON
 // =========================================================
 
-// Send button
 if (sendBtn) {
 
   sendBtn.addEventListener(
@@ -347,19 +416,23 @@ if (sendBtn) {
 
 }
 
-// Enter key
+
+// =========================================================
+// ENTER KEY
+// =========================================================
+
 if (messageInput) {
 
   messageInput.addEventListener(
-    'keypress',
-    (e) => {
+    'keydown',
+    (event) => {
 
       if (
-        e.key === 'Enter' &&
-        !e.shiftKey
+        event.key === 'Enter' &&
+        !event.shiftKey
       ) {
 
-        e.preventDefault();
+        event.preventDefault();
 
         sendMessage();
 
@@ -370,103 +443,481 @@ if (messageInput) {
 
 }
 
+
 // =========================================================
-// BOTTOM NAVIGATION
+// PLUS MENU
 // =========================================================
 
-function setActiveNav(activeButton) {
+function openPlusMenu() {
 
-  navItems.forEach(
-    btn => btn.classList.remove('active')
+  if (!plusMenuOverlay) {
+    return;
+  }
+
+  plusMenuOverlay.classList.add(
+    'show'
   );
 
-  if (activeButton) {
+  plusMenuOverlay.setAttribute(
+    'aria-hidden',
+    'false'
+  );
 
-    activeButton.classList.add('active');
+
+  if (plusBtn) {
+
+    plusBtn.setAttribute(
+      'aria-expanded',
+      'true'
+    );
 
   }
 
 }
 
-navItems.forEach(item => {
 
-  item.addEventListener(
+function closePlusMenu() {
+
+  if (!plusMenuOverlay) {
+    return;
+  }
+
+  plusMenuOverlay.classList.remove(
+    'show'
+  );
+
+  plusMenuOverlay.setAttribute(
+    'aria-hidden',
+    'true'
+  );
+
+
+  if (plusBtn) {
+
+    plusBtn.setAttribute(
+      'aria-expanded',
+      'false'
+    );
+
+  }
+
+}
+
+
+if (plusBtn) {
+
+  plusBtn.addEventListener(
     'click',
     () => {
 
-      const tab =
-        item.dataset.tab;
+      if (
+        plusMenuOverlay.classList.contains(
+          'show'
+        )
+      ) {
 
-      if (tab === 'chat') {
-
-        setActiveNav(item);
+        closePlusMenu();
 
       }
 
       else {
 
-        const label =
-          item.querySelector(
-            '.nav-label'
-          );
-
-        const featureName =
-          label
-            ? label.textContent
-            : tab;
-
-        alert(
-          `${featureName} ফিচার শীঘ্রই আসছে! 🚀`
-        );
-
-        const chatNav =
-          document.querySelector(
-            '.nav-item[data-tab="chat"]'
-          );
-
-        if (chatNav) {
-
-          setActiveNav(chatNav);
-
-        }
+        openPlusMenu();
 
       }
 
     }
   );
 
-});
+}
 
-// =========================================================
-// INITIAL SETUP
-// =========================================================
 
-// Set Gemini as default
-if (aiModel) {
+if (closePlusBtn) {
 
-  aiModel.value = 'gemini';
-
-  selectedModel = 'gemini';
-
-  updateModelStatus();
+  closePlusBtn.addEventListener(
+    'click',
+    closePlusMenu
+  );
 
 }
 
-// Chat tab active
+
+// Close when clicking outside menu
+
+if (plusMenuOverlay) {
+
+  plusMenuOverlay.addEventListener(
+    'click',
+    (event) => {
+
+      if (
+        event.target ===
+        plusMenuOverlay
+      ) {
+
+        closePlusMenu();
+
+      }
+
+    }
+  );
+
+}
+
+
+// ESC closes menu
+
+document.addEventListener(
+  'keydown',
+  (event) => {
+
+    if (event.key === 'Escape') {
+
+      closePlusMenu();
+
+    }
+
+  }
+);
+
+
+// =========================================================
+// FILE / IMAGE ACTIONS
+// =========================================================
+
+function showComingSoon(
+  featureName
+) {
+
+  alert(
+    `${featureName}\n\nComing Soon 🚀\n\nThis Infinity AI feature is currently under development.`
+  );
+
+}
+
+
+function handleGallery() {
+
+  if (galleryInput) {
+
+    galleryInput.click();
+
+  }
+
+}
+
+
+function handleCamera() {
+
+  if (cameraInput) {
+
+    cameraInput.click();
+
+  }
+
+}
+
+
+// =========================================================
+// TOOL MENU
+// =========================================================
+
+toolItems.forEach(
+  (tool) => {
+
+    tool.addEventListener(
+      'click',
+      () => {
+
+        const action =
+          tool.dataset.action;
+
+
+        // Gallery
+
+        if (
+          action === 'gallery'
+        ) {
+
+          closePlusMenu();
+
+          handleGallery();
+
+          return;
+
+        }
+
+
+        // Camera
+
+        if (
+          action === 'camera'
+        ) {
+
+          closePlusMenu();
+
+          handleCamera();
+
+          return;
+
+        }
+
+
+        // Image understanding
+
+        if (
+          action ===
+          'image-understanding'
+        ) {
+
+          closePlusMenu();
+
+          showComingSoon(
+            '🧠 Image Understanding'
+          );
+
+          return;
+
+        }
+
+
+        // Everything else
+
+        const title =
+          tool.querySelector(
+            'strong'
+          );
+
+
+        const featureName =
+          title
+            ? title.textContent
+            : 'Infinity AI Feature';
+
+
+        closePlusMenu();
+
+        showComingSoon(
+          featureName
+        );
+
+      }
+    );
+
+  }
+);
+
+
+// =========================================================
+// IMAGE INPUT RESULT
+// =========================================================
+
+if (galleryInput) {
+
+  galleryInput.addEventListener(
+    'change',
+    () => {
+
+      const file =
+        galleryInput.files[0];
+
+      if (!file) {
+        return;
+      }
+
+
+      addMessageBubble(
+        `🖼️ Image selected: ${file.name}`,
+        'user'
+      );
+
+
+      addMessageBubble(
+        '🧠 Infinity AI image understanding is being prepared for this workspace.',
+        'ai'
+      );
+
+
+      // Reset input so same image can
+      // be selected again later.
+
+      galleryInput.value = '';
+
+    }
+  );
+
+}
+
+
+if (cameraInput) {
+
+  cameraInput.addEventListener(
+    'change',
+    () => {
+
+      const file =
+        cameraInput.files[0];
+
+      if (!file) {
+        return;
+      }
+
+
+      addMessageBubble(
+        `📸 Photo captured: ${file.name}`,
+        'user'
+      );
+
+
+      addMessageBubble(
+        '🧠 Infinity AI image understanding is being prepared for this workspace.',
+        'ai'
+      );
+
+
+      cameraInput.value = '';
+
+    }
+  );
+
+}
+
+
+// =========================================================
+// BOTTOM NAVIGATION
+// =========================================================
+
+function setActiveNav(
+  activeButton
+) {
+
+  navItems.forEach(
+    button => {
+
+      button.classList.remove(
+        'active'
+      );
+
+    }
+  );
+
+
+  if (activeButton) {
+
+    activeButton.classList.add(
+      'active'
+    );
+
+  }
+
+}
+
+
+navItems.forEach(
+  item => {
+
+    item.addEventListener(
+      'click',
+      () => {
+
+        const tab =
+          item.dataset.tab;
+
+
+        if (tab === 'chat') {
+
+          setActiveNav(
+            item
+          );
+
+          return;
+
+        }
+
+
+        const label =
+          item.querySelector(
+            '.nav-label'
+          );
+
+
+        const featureName =
+          label
+            ? label.textContent
+            : tab;
+
+
+        alert(
+          `${featureName}\n\nComing Soon 🚀`
+        );
+
+
+        const chatNav =
+          document.querySelector(
+            '.nav-item[data-tab="chat"]'
+          );
+
+
+        if (chatNav) {
+
+          setActiveNav(
+            chatNav
+          );
+
+        }
+
+      }
+    );
+
+  }
+);
+
+
+// =========================================================
+// INITIALIZATION
+// =========================================================
+
+if (aiModel) {
+
+  aiModel.value =
+    'gemini';
+
+}
+
+
+updateModelStatus();
+
+
 const chatTab =
   document.querySelector(
     '.nav-item[data-tab="chat"]'
   );
 
+
 if (chatTab) {
 
-  setActiveNav(chatTab);
+  setActiveNav(
+    chatTab
+  );
 
 }
 
-// Focus input
+
 if (messageInput) {
 
   messageInput.focus();
 
 }
+
+
+console.log(
+  '✨ Infinity AI initialized.'
+);
+
+console.log(
+  '🧠 Infinity AI Core: Online'
+);
+
+console.log(
+  '⚡ Backend fallback system: Active'
+);
