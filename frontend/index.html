@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
 
@@ -10,570 +10,580 @@
 
   <meta
     name="theme-color"
-    content="#050714"
+    content="#02040a"
   >
 
-  <meta
-    name="description"
-    content="AI Super App - Infinity Futuristic AI Workspace"
-  >
-
-  <title>AI Super App — Infinity AI</title>
+  <title>Infinity AI</title>
 
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <!-- =====================================================
-       FUTURISTIC BACKGROUND
-  ====================================================== -->
+  <!-- ==============================
+       HEADER
+       ============================== -->
 
-  <div class="universe-bg">
+  <header class="app-header">
 
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
+    <div class="header-glow"></div>
 
-    <div class="grid-overlay"></div>
+    <div class="brand">
 
-    <div class="stars"></div>
+      <div class="brand-icon">
+        ✦
+      </div>
+
+      <div>
+        <h1>INFINITY AI</h1>
+
+        <span>
+          NEXT-GEN INTELLIGENCE
+        </span>
+      </div>
+
+    </div>
+
+    <div class="online-status">
+      <span></span>
+      ONLINE
+    </div>
+
+  </header>
+
+
+  <!-- ==============================
+       AI CAPABILITIES
+       ============================== -->
+
+  <section class="ai-selector-area">
+
+    <label for="aiModel">
+      🧠 AI CAPABILITIES
+    </label>
+
+    <select id="aiModel">
+
+      <option value="gemini">
+        Infinity AI Core
+      </option>
+
+      <option value="deepseek">
+        Deep Reasoning
+      </option>
+
+      <option value="chatgpt">
+        Advanced Assistant
+      </option>
+
+      <option value="claude">
+        Creative Intelligence
+      </option>
+
+      <option value="kimi">
+        Long Context AI
+      </option>
+
+      <option value="perplexity">
+        Web Intelligence
+      </option>
+
+    </select>
+
+    <p id="modelStatus">
+      Infinity AI Core Online ✓
+    </p>
+
+  </section>
+
+
+  <!-- ==============================
+       CHAT
+       ============================== -->
+
+  <main
+    class="chat-container"
+    id="chatContainer"
+  >
+
+    <div class="welcome-message">
+
+      <p>
+        ✨ Welcome to Infinity AI
+      </p>
+
+      <small>
+        Your next-generation AI workspace.
+      </small>
+
+    </div>
+
+  </main>
+
+
+  <!-- ==============================
+       INPUT AREA
+       ============================== -->
+
+  <div class="input-area">
+
+    <!-- PLUS BUTTON -->
+
+    <button
+      id="plusBtn"
+      class="plus-btn"
+      type="button"
+      aria-label="Open AI tools"
+      aria-expanded="false"
+    >
+      <span>＋</span>
+    </button>
+
+
+    <!-- MESSAGE INPUT -->
+
+    <input
+      type="text"
+      id="messageInput"
+      placeholder="Ask Infinity AI anything..."
+      autocomplete="off"
+      enterkeyhint="send"
+    >
+
+
+    <!-- SEND -->
+
+    <button
+      id="sendBtn"
+      type="button"
+      aria-label="Send message"
+    >
+
+      <span class="send-icon">
+        ➤
+      </span>
+
+    </button>
 
   </div>
 
 
-  <!-- =====================================================
-       MAIN APP
-  ====================================================== -->
-
-  <div class="app-shell">
-
-
-    <!-- ===================================================
-         HEADER
-    ==================================================== -->
-
-    <header class="app-header">
-
-      <div class="brand-area">
-
-        <div class="brand-logo">
-          <span>✦</span>
-        </div>
-
-        <div class="brand-text">
-
-          <h1>AI Super App</h1>
-
-          <div class="brand-status">
-            <span class="status-dot"></span>
-            <span>INFINITY AI CORE ONLINE</span>
-          </div>
-
-        </div>
-
-      </div>
-
-
-      <div class="header-actions">
-
-        <button
-          class="header-btn"
-          id="notificationBtn"
-          aria-label="Notifications"
-        >
-          ◇
-        </button>
-
-        <button
-          class="header-btn"
-          id="menuBtn"
-          aria-label="Menu"
-        >
-          ⋮
-        </button>
-
-      </div>
-
-    </header>
-
-
-    <!-- ===================================================
-         AI CORE STATUS
-    ==================================================== -->
-
-    <section class="ai-core-card">
-
-      <div class="core-left">
-
-        <div class="core-icon">
-          🧠
-        </div>
-
-        <div>
-
-          <div class="core-label">
-            AI CORE
-          </div>
-
-          <div class="core-title">
-            Gemini Intelligence
-          </div>
-
-          <div class="core-subtitle">
-            Main Brain • Smart Routing Active
-          </div>
-
-        </div>
-
-      </div>
-
-
-      <div class="core-status">
-
-        <span class="pulse-dot"></span>
-
-        <span>ONLINE</span>
-
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         AI MODEL SELECTOR
-    ==================================================== -->
-
-    <section class="ai-selector-area">
-
-      <div class="section-heading">
-
-        <div>
-
-          <span class="section-kicker">
-            INTELLIGENCE ENGINE
-          </span>
-
-          <h2>
-            🧠 AI Model
-          </h2>
-
-        </div>
-
-        <span class="live-badge">
-          LIVE
-        </span>
-
-      </div>
-
-
-      <div class="selector-wrapper">
-
-        <div class="selector-icon">
-          ⚡
-        </div>
-
-        <select id="aiModel">
-
-          <!-- MAIN -->
-
-          <option value="gemini">
-            Gemini • Main Brain ✅
-          </option>
-
-          <!-- FALLBACK -->
-
-          <option value="groq">
-            Groq • Fallback ⚡
-          </option>
-
-          <!-- FUTURE PROVIDERS -->
-
-          <option value="deepseek">
-            DeepSeek • Coming Soon 🔜
-          </option>
-
-          <option value="chatgpt">
-            ChatGPT • Coming Soon 🔜
-          </option>
-
-          <option value="claude">
-            Claude • Coming Soon 🔜
-          </option>
-
-          <option value="kimi">
-            Kimi • Coming Soon 🔜
-          </option>
-
-          <option value="perplexity">
-            Perplexity AI • Coming Soon 🔜
-          </option>
-
-        </select>
-
-      </div>
-
-
-      <div
-        id="modelStatus"
-        class="model-status"
-      >
-        <span class="mini-status-dot"></span>
-
-        <span>
-          Gemini বর্তমানে সক্রিয় • Groq fallback প্রস্তুত
-        </span>
-
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         QUICK AI TOOLS
-    ==================================================== -->
-
-    <section class="quick-tools">
-
-      <div class="section-heading compact">
-
-        <div>
-
-          <span class="section-kicker">
-            AI POWER
-          </span>
-
-          <h2>
-            Quick Tools
-          </h2>
-
-        </div>
-
-      </div>
-
-
-      <div class="tool-grid">
-
-        <button
-          class="tool-card"
-          data-tool="image"
-        >
-
-          <span class="tool-icon">
-            🎨
-          </span>
-
-          <span class="tool-name">
-            Image
-          </span>
-
-          <span class="tool-status">
-            Soon
-          </span>
-
-        </button>
-
-
-        <button
-          class="tool-card"
-          data-tool="video"
-        >
-
-          <span class="tool-icon">
-            🎬
-          </span>
-
-          <span class="tool-name">
-            Video
-          </span>
-
-          <span class="tool-status">
-            Soon
-          </span>
-
-        </button>
-
-
-        <button
-          class="tool-card"
-          data-tool="voice"
-        >
-
-          <span class="tool-icon">
-            🎤
-          </span>
-
-          <span class="tool-name">
-            Voice
-          </span>
-
-          <span class="tool-status">
-            Soon
-          </span>
-
-        </button>
-
-
-        <button
-          class="tool-card"
-          data-tool="tools"
-        >
-
-          <span class="tool-icon">
-            🛠️
-          </span>
-
-          <span class="tool-name">
-            AI Tools
-          </span>
-
-          <span class="tool-status">
-            Explore
-          </span>
-
-        </button>
-
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         CHAT AREA
-    ==================================================== -->
-
-    <main
-      class="chat-container"
-      id="chatContainer"
+  <!-- ==============================
+       PLUS MENU
+       ============================== -->
+
+  <div
+    id="plusMenuOverlay"
+    class="plus-menu-overlay"
+    aria-hidden="true"
+  >
+
+    <div
+      id="plusMenu"
+      class="plus-menu"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Infinity AI tools"
     >
 
-      <div class="welcome-message">
+      <div class="plus-menu-header">
 
-        <div class="welcome-orb">
-          ✦
-        </div>
-
-        <div class="welcome-content">
-
-          <span class="welcome-kicker">
-            INFINITY AI SYSTEM
-          </span>
+        <div>
 
           <h2>
-            Welcome to your
-            <span>AI Super App</span>
+            Infinity AI
           </h2>
 
           <p>
-            Gemini is ready to assist you.
-            Ask anything, create ideas and explore
-            the next generation of AI.
+            Create, attach and explore
           </p>
-
-          <div class="welcome-chips">
-
-            <button class="suggestion-chip">
-              💡 Ask anything
-            </button>
-
-            <button class="suggestion-chip">
-              ✍️ Write something
-            </button>
-
-            <button class="suggestion-chip">
-              🚀 Create an idea
-            </button>
-
-          </div>
 
         </div>
 
-      </div>
-
-    </main>
-
-
-    <!-- ===================================================
-         INPUT AREA
-    ==================================================== -->
-
-    <section class="input-section">
-
-      <div class="input-glow"></div>
-
-      <div class="input-area">
-
         <button
-          class="input-action"
-          id="attachBtn"
-          aria-label="Attach"
+          id="closePlusBtn"
+          class="close-plus-btn"
+          type="button"
+          aria-label="Close menu"
         >
-          ＋
-        </button>
-
-
-        <input
-          type="text"
-          id="messageInput"
-          placeholder="Ask Infinity AI anything..."
-          autocomplete="off"
-        />
-
-
-        <button
-          id="sendBtn"
-          class="send-button"
-          aria-label="Send message"
-        >
-
-          <span class="send-icon">
-            ➤
-          </span>
-
+          ×
         </button>
 
       </div>
 
 
-      <div class="input-info">
+      <!-- IMAGE -->
 
-        <span>
-          ✦ Gemini Core
-        </span>
+      <section class="tool-section">
 
-        <span>
-          •
-        </span>
+        <h3>📷 IMAGE</h3>
 
-        <span>
-          Groq Fallback
-        </span>
+        <div class="tool-grid">
 
-        <span>
-          •
-        </span>
-
-        <span>
-          AI Super App
-        </span>
-
-      </div>
-
-    </section>
+          <button
+            class="tool-item"
+            data-action="gallery"
+            type="button"
+          >
+            <span>🖼️</span>
+            <strong>Gallery</strong>
+            <small>Available</small>
+          </button>
 
 
-    <!-- ===================================================
-         BOTTOM NAVIGATION
-    ==================================================== -->
-
-    <nav class="bottom-nav">
-
-      <button
-        class="nav-item active"
-        data-tab="chat"
-      >
-
-        <span class="nav-icon">
-          ◉
-        </span>
-
-        <span class="nav-label">
-          Chat
-        </span>
-
-      </button>
+          <button
+            class="tool-item"
+            data-action="camera"
+            type="button"
+          >
+            <span>📸</span>
+            <strong>Camera</strong>
+            <small>Available</small>
+          </button>
 
 
-      <button
-        class="nav-item"
-        data-tab="image"
-      >
+          <button
+            class="tool-item"
+            data-action="image-understanding"
+            type="button"
+          >
+            <span>🧠</span>
+            <strong>Image Understanding</strong>
+            <small>Available</small>
+          </button>
 
-        <span class="nav-icon">
-          ◈
-        </span>
+        </div>
 
-        <span class="nav-label">
-          Image
-        </span>
-
-      </button>
-
-
-      <button
-        class="nav-item"
-        data-tab="video"
-      >
-
-        <span class="nav-icon">
-          ▶
-        </span>
-
-        <span class="nav-label">
-          Video
-        </span>
-
-      </button>
+      </section>
 
 
-      <button
-        class="nav-item"
-        data-tab="voice"
-      >
+      <!-- FILES -->
 
-        <span class="nav-icon">
-          ◉
-        </span>
+      <section class="tool-section">
 
-        <span class="nav-label">
-          Voice
-        </span>
+        <h3>📄 FILES</h3>
 
-      </button>
+        <div class="tool-grid">
 
-
-      <button
-        class="nav-item"
-        data-tab="tools"
-      >
-
-        <span class="nav-icon">
-          ⌘
-        </span>
-
-        <span class="nav-label">
-          Tools
-        </span>
-
-      </button>
-
-    </nav>
+          <button
+            class="tool-item coming-soon"
+            data-action="pdf"
+            type="button"
+          >
+            <span>📎</span>
+            <strong>PDF</strong>
+            <small>Coming Soon</small>
+          </button>
 
 
-    <!-- ===================================================
-         FOOTER
-    ==================================================== -->
+          <button
+            class="tool-item coming-soon"
+            data-action="documents"
+            type="button"
+          >
+            <span>📝</span>
+            <strong>TXT / DOCX</strong>
+            <small>Coming Soon</small>
+          </button>
 
-    <footer class="app-footer">
 
-      <span>
-        INFINITY AI
-      </span>
+          <button
+            class="tool-item coming-soon"
+            data-action="spreadsheet"
+            type="button"
+          >
+            <span>📊</span>
+            <strong>XLSX / CSV</strong>
+            <small>Coming Soon</small>
+          </button>
 
-      <span class="footer-line"></span>
 
-      <span>
-        NEXT GENERATION INTELLIGENCE
-      </span>
+          <button
+            class="tool-item coming-soon"
+            data-action="other-files"
+            type="button"
+          >
+            <span>📁</span>
+            <strong>Other Files</strong>
+            <small>Coming Soon</small>
+          </button>
 
-    </footer>
+        </div>
+
+      </section>
+
+
+      <!-- CREATE -->
+
+      <section class="tool-section">
+
+        <h3>🎨 CREATE</h3>
+
+        <div class="tool-grid">
+
+          <button
+            class="tool-item coming-soon"
+            data-action="ai-image"
+            type="button"
+          >
+            <span>🖼️</span>
+            <strong>AI Image</strong>
+            <small>Coming Soon</small>
+          </button>
+
+
+          <button
+            class="tool-item coming-soon"
+            data-action="ai-video"
+            type="button"
+          >
+            <span>🎬</span>
+            <strong>AI Video</strong>
+            <small>Coming Soon</small>
+          </button>
+
+
+          <button
+            class="tool-item coming-soon"
+            data-action="ai-music"
+            type="button"
+          >
+            <span>🎵</span>
+            <strong>AI Music</strong>
+            <small>Coming Soon</small>
+          </button>
+
+
+          <button
+            class="tool-item coming-soon"
+            data-action="ai-voice"
+            type="button"
+          >
+            <span>🎙️</span>
+            <strong>AI Voice</strong>
+            <small>Coming Soon</small>
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <!-- AI TOOLS -->
+
+      <section class="tool-section">
+
+        <h3>🧠 AI TOOLS</h3>
+
+        <div class="tool-grid">
+
+          <button
+            class="tool-item coming-soon"
+            data-action="web-search"
+            type="button"
+          >
+            <span>🔍</span>
+            <strong>Web Search</strong>
+            <small>Coming Soon</small>
+          </button>
+
+
+          <button
+            class="tool-item coming-soon"
+            data-action="summarize"
+            type="button"
+          >
+            <span>📝</span>
+            <strong>Summarize</strong>
+            <small>Coming Soon</small>
+          </button>
+
+
+          <button
+            class="tool-item coming-soon"
+            data-action="translate"
+            type="button"
+          >
+            <span>🌐</span>
+            <strong>Translate</strong>
+            <small>Coming Soon</small>
+          </button>
+
+
+          <button
+            class="tool-item coming-soon"
+            data-action="code"
+            type="button"
+          >
+            <span>💻</span>
+            <strong>Code</strong>
+            <small>Coming Soon</small>
+          </button>
+
+
+          <button
+            class="tool-item coming-soon"
+            data-action="study"
+            type="button"
+          >
+            <span>📚</span>
+            <strong>Study / Explain</strong>
+            <small>Coming Soon</small>
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <!-- FUTURE -->
+
+      <section class="tool-section">
+
+        <h3>🚀 FUTURE</h3>
+
+        <div class="tool-grid">
+
+          <button
+            class="tool-item coming-soon"
+            data-action="location"
+            type="button"
+          >
+            <span>📍</span>
+            <strong>Location</strong>
+            <small>Coming Soon</small>
+          </button>
+
+
+          <button
+            class="tool-item coming-soon"
+            data-action="voice-input"
+            type="button"
+          >
+            <span>🎤</span>
+            <strong>Voice Input</strong>
+            <small>Coming Soon</small>
+          </button>
+
+
+          <button
+            class="tool-item coming-soon"
+            data-action="scan"
+            type="button"
+          >
+            <span>📷</span>
+            <strong>Scan Document</strong>
+            <small>Coming Soon</small>
+          </button>
+
+
+          <button
+            class="tool-item coming-soon"
+            data-action="multiple-files"
+            type="button"
+          >
+            <span>📑</span>
+            <strong>Multiple Files</strong>
+            <small>Coming Soon</small>
+          </button>
+
+
+          <button
+            class="tool-item coming-soon"
+            data-action="url-analysis"
+            type="button"
+          >
+            <span>🔗</span>
+            <strong>URL Analysis</strong>
+            <small>Coming Soon</small>
+          </button>
+
+        </div>
+
+      </section>
+
+    </div>
 
   </div>
 
 
-  <!-- =====================================================
-       JAVASCRIPT
-  ====================================================== -->
+  <!-- ==============================
+       BOTTOM NAV
+       ============================== -->
+
+  <nav class="bottom-nav">
+
+    <button
+      class="nav-item active"
+      data-tab="chat"
+      type="button"
+    >
+      <span class="nav-icon">💬</span>
+      <span class="nav-label">Chat</span>
+    </button>
+
+
+    <button
+      class="nav-item"
+      data-tab="image"
+      type="button"
+    >
+      <span class="nav-icon">🎨</span>
+      <span class="nav-label">Image</span>
+    </button>
+
+
+    <button
+      class="nav-item"
+      data-tab="video"
+      type="button"
+    >
+      <span class="nav-icon">🎬</span>
+      <span class="nav-label">Video</span>
+    </button>
+
+
+    <button
+      class="nav-item"
+      data-tab="voice"
+      type="button"
+    >
+      <span class="nav-icon">🎤</span>
+      <span class="nav-label">Voice</span>
+    </button>
+
+
+    <button
+      class="nav-item"
+      data-tab="tools"
+      type="button"
+    >
+      <span class="nav-icon">🛠️</span>
+      <span class="nav-label">Tools</span>
+    </button>
+
+  </nav>
+
+
+  <!-- ==============================
+       HIDDEN FILE INPUTS
+       ============================== -->
+
+  <input
+    type="file"
+    id="galleryInput"
+    accept="image/*"
+    hidden
+  >
+
+  <input
+    type="file"
+    id="cameraInput"
+    accept="image/*"
+    capture="environment"
+    hidden
+  >
+
 
   <script src="app.js"></script>
 
