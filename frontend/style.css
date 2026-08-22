@@ -1915,3 +1915,48 @@ body .plus-menu {
 /* =========================================================
    ∞ END — INFINITY AI HYPER-FUTURE SYSTEM
    ========================================================= */
+/* =========================================================
+   INFINITY AI — SCROLL FIX
+   ========================================================= */
+
+/* Main page must allow the chat area to control scrolling */
+html,
+body {
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+/* Chat itself must remain scrollable */
+.chat-container {
+  flex: 1 1 auto;
+  min-height: 0;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+
+  scroll-behavior: smooth;
+}
+
+/* Keep input and navigation fixed */
+.input-area,
+.bottom-nav {
+  flex-shrink: 0;
+}
+
+/* Make sure messages can grow naturally */
+.message {
+  flex-shrink: 0;
+}
+
+/* Mobile browser fix */
+@media (max-width: 600px) {
+  .chat-container {
+    min-height: 0;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+}
