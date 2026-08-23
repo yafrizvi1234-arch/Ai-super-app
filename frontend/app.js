@@ -1,8 +1,8 @@
-// ===================================
-// INFINITY AI — Frontend Logic
+// =========================================================
+// INFINITY AI — FRONTEND LOGIC
 // Main Brain: Infinity AI
 // Backend: Gemini + Groq Fallback
-// ===================================
+// =========================================================
 
 const API_URL =
   'https://ai-super-app-3fr7.onrender.com/api/chat';
@@ -58,8 +58,6 @@ let isWaitingForResponse = false;
 
 // =========================================================
 // AI CAPABILITIES
-// These are UI capabilities.
-// They do NOT manually switch backend providers.
 // =========================================================
 
 const AI_CAPABILITIES = {
@@ -122,7 +120,7 @@ function removeWelcomeMessage() {
 
 
 // =========================================================
-// ADD MESSAGE
+// ADD MESSAGE BUBBLE
 // =========================================================
 
 function addMessageBubble(
@@ -135,9 +133,7 @@ function addMessageBubble(
   const bubble =
     document.createElement('div');
 
-  bubble.classList.add(
-    'message'
-  );
+  bubble.classList.add('message');
 
 
   if (type === 'user') {
@@ -189,6 +185,99 @@ function addMessageBubble(
 
 
 // =========================================================
+// ADD IMAGE MESSAGE
+// =========================================================
+
+function addImageMessage(
+  file,
+  source
+) {
+
+  removeWelcomeMessage();
+
+  const bubble =
+    document.createElement('div');
+
+  bubble.classList.add(
+    'message',
+    'user-message',
+    'image-message'
+  );
+
+
+  const wrapper =
+    document.createElement('div');
+
+  wrapper.style.display = 'flex';
+  wrapper.style.flexDirection = 'column';
+  wrapper.style.gap = '8px';
+
+
+  const image =
+    document.createElement('img');
+
+  image.alt =
+    source === 'camera'
+      ? 'Captured image'
+      : 'Selected image';
+
+  image.style.width = '100%';
+  image.style.maxWidth = '280px';
+  image.style.maxHeight = '320px';
+  image.style.objectFit = 'cover';
+  image.style.borderRadius = '14px';
+  image.style.display = 'block';
+
+
+  const imageURL =
+    URL.createObjectURL(file);
+
+  image.src = imageURL;
+
+
+  const info =
+    document.createElement('small');
+
+  info.textContent =
+    source === 'camera'
+      ? '📸 Photo captured'
+      : '🖼️ Image selected';
+
+  info.style.opacity = '0.8';
+
+
+  wrapper.appendChild(image);
+  wrapper.appendChild(info);
+
+  bubble.appendChild(wrapper);
+
+  chatContainer.appendChild(
+    bubble
+  );
+
+  scrollToBottom();
+
+
+  // Release memory when image is removed
+  image.onload = () => {
+
+    setTimeout(() => {
+
+      URL.revokeObjectURL(
+        imageURL
+      );
+
+    }, 1000);
+
+  };
+
+
+  return bubble;
+
+}
+
+
+// =========================================================
 // REPLACE MESSAGE
 // =========================================================
 
@@ -223,7 +312,6 @@ function replaceBubble(
     );
 
   }
-
 
   scrollToBottom();
 
@@ -267,9 +355,7 @@ if (aiModel) {
         return;
       }
 
-      // Do not expose provider names.
-      // Infinity AI remains the visible identity.
-
+      // Provider names are never exposed.
       updateModelStatus();
 
     }
@@ -377,6 +463,7 @@ async function sendMessage() {
 
   }
 
+
   catch (error) {
 
     console.error(
@@ -392,6 +479,7 @@ async function sendMessage() {
     );
 
   }
+
 
   finally {
 
@@ -542,7 +630,9 @@ if (closePlusBtn) {
 }
 
 
-// Close when clicking outside menu
+// =========================================================
+// CLOSE PLUS MENU OUTSIDE
+// =========================================================
 
 if (plusMenuOverlay) {
 
@@ -565,7 +655,9 @@ if (plusMenuOverlay) {
 }
 
 
-// ESC closes menu
+// =========================================================
+// ESC CLOSE
+// =========================================================
 
 document.addEventListener(
   'keydown',
@@ -582,7 +674,7 @@ document.addEventListener(
 
 
 // =========================================================
-// FILE / IMAGE ACTIONS
+// COMING SOON
 // =========================================================
 
 function showComingSoon(
@@ -596,24 +688,44 @@ function showComingSoon(
 }
 
 
+// =========================================================
+// GALLERY
+// =========================================================
+
 function handleGallery() {
 
-  if (galleryInput) {
+  if (!galleryInput) {
 
-    galleryInput.click();
+    console.error(
+      'Gallery input not found.'
+    );
+
+    return;
 
   }
+
+  galleryInput.click();
 
 }
 
 
+// =========================================================
+// CAMERA
+// =========================================================
+
 function handleCamera() {
 
-  if (cameraInput) {
+  if (!cameraInput) {
 
-    cameraInput.click();
+    console.error(
+      'Camera input not found.'
+    );
+
+    return;
 
   }
+
+  cameraInput.click();
 
 }
 
@@ -633,7 +745,9 @@ toolItems.forEach(
           tool.dataset.action;
 
 
-        // Gallery
+        // =========================
+        // GALLERY
+        // =========================
 
         if (
           action === 'gallery'
@@ -648,7 +762,9 @@ toolItems.forEach(
         }
 
 
-        // Camera
+        // =========================
+        // CAMERA
+        // =========================
 
         if (
           action === 'camera'
@@ -663,7 +779,9 @@ toolItems.forEach(
         }
 
 
-        // Image understanding
+        // =========================
+        // IMAGE UNDERSTANDING
+        // =========================
 
         if (
           action ===
@@ -681,13 +799,14 @@ toolItems.forEach(
         }
 
 
-        // Everything else
+        // =========================
+        // EVERYTHING ELSE
+        // =========================
 
         const title =
           tool.querySelector(
             'strong'
           );
-
 
         const featureName =
           title
@@ -709,7 +828,7 @@ toolItems.forEach(
 
 
 // =========================================================
-// IMAGE INPUT RESULT
+// GALLERY IMAGE RESULT
 // =========================================================
 
 if (galleryInput) {
@@ -721,25 +840,48 @@ if (galleryInput) {
       const file =
         galleryInput.files[0];
 
+
       if (!file) {
         return;
       }
 
 
-      addMessageBubble(
-        `🖼️ Image selected: ${file.name}`,
-        'user'
+      // Check image type
+
+      if (
+        !file.type.startsWith(
+          'image/'
+        )
+      ) {
+
+        alert(
+          'Please select an image file.'
+        );
+
+        galleryInput.value = '';
+
+        return;
+
+      }
+
+
+      // Show image preview
+
+      addImageMessage(
+        file,
+        'gallery'
       );
 
 
+      // Infinity AI status
+
       addMessageBubble(
-        '🧠 Infinity AI image understanding is being prepared for this workspace.',
+        '🧠 Infinity AI image analysis is coming soon. 🚀',
         'ai'
       );
 
 
-      // Reset input so same image can
-      // be selected again later.
+      // Allow same image to be selected again
 
       galleryInput.value = '';
 
@@ -748,6 +890,10 @@ if (galleryInput) {
 
 }
 
+
+// =========================================================
+// CAMERA RESULT
+// =========================================================
 
 if (cameraInput) {
 
@@ -758,19 +904,43 @@ if (cameraInput) {
       const file =
         cameraInput.files[0];
 
+
       if (!file) {
         return;
       }
 
 
-      addMessageBubble(
-        `📸 Photo captured: ${file.name}`,
-        'user'
+      // Check image type
+
+      if (
+        !file.type.startsWith(
+          'image/'
+        )
+      ) {
+
+        alert(
+          'Please capture a valid image.'
+        );
+
+        cameraInput.value = '';
+
+        return;
+
+      }
+
+
+      // Show captured image
+
+      addImageMessage(
+        file,
+        'camera'
       );
 
 
+      // Infinity AI status
+
       addMessageBubble(
-        '🧠 Infinity AI image understanding is being prepared for this workspace.',
+        '🧠 Infinity AI image analysis is coming soon. 🚀',
         'ai'
       );
 
@@ -910,6 +1080,10 @@ if (messageInput) {
 }
 
 
+// =========================================================
+// CONSOLE
+// =========================================================
+
 console.log(
   '✨ Infinity AI initialized.'
 );
@@ -919,5 +1093,13 @@ console.log(
 );
 
 console.log(
-  '⚡ Backend fallback system: Active'
+  '⚡ Gemini + Groq fallback system: Active'
+);
+
+console.log(
+  '🖼️ Gallery image preview: Active'
+);
+
+console.log(
+  '📸 Camera image preview: Active'
 );
