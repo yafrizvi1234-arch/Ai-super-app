@@ -1,7 +1,7 @@
 // =========================================================
-// INFINITY AI — FRONTEND LOGIC
-// Main Brain: Infinity AI
-// Backend: Gemini + Groq Fallback
+// INFINITY AI — COMPLETE FRONTEND
+// Text Chat + Gallery + Camera + Gemini Vision
+// Backend: Render
 // =========================================================
 
 const API_URL =
@@ -30,6 +30,9 @@ const aiModel =
 const modelStatus =
   document.getElementById('modelStatus');
 
+
+// PLUS MENU
+
 const plusBtn =
   document.getElementById('plusBtn');
 
@@ -41,6 +44,9 @@ const closePlusBtn =
 
 const toolItems =
   document.querySelectorAll('.tool-item');
+
+
+// IMAGE INPUTS
 
 const galleryInput =
   document.getElementById('galleryInput');
@@ -56,8 +62,15 @@ const cameraInput =
 let isWaitingForResponse = false;
 
 
+// Currently selected image
+
+let selectedImage = null;
+
+
 // =========================================================
 // AI CAPABILITIES
+// These are UI capabilities.
+// They do not manually switch backend providers.
 // =========================================================
 
 const AI_CAPABILITIES = {
@@ -95,7 +108,9 @@ const AI_CAPABILITIES = {
 
 function scrollToBottom() {
 
-  if (!chatContainer) return;
+  if (!chatContainer) {
+    return;
+  }
 
   chatContainer.scrollTop =
     chatContainer.scrollHeight;
@@ -104,13 +119,15 @@ function scrollToBottom() {
 
 
 // =========================================================
-// REMOVE WELCOME
+// REMOVE WELCOME MESSAGE
 // =========================================================
 
 function removeWelcomeMessage() {
 
   const welcome =
-    document.querySelector('.welcome-message');
+    document.querySelector(
+      '.welcome-message'
+    );
 
   if (welcome) {
     welcome.remove();
@@ -120,7 +137,7 @@ function removeWelcomeMessage() {
 
 
 // =========================================================
-// ADD MESSAGE BUBBLE
+// ADD MESSAGE
 // =========================================================
 
 function addMessageBubble(
@@ -133,7 +150,10 @@ function addMessageBubble(
   const bubble =
     document.createElement('div');
 
-  bubble.classList.add('message');
+
+  bubble.classList.add(
+    'message'
+  );
 
 
   if (type === 'user') {
@@ -144,6 +164,7 @@ function addMessageBubble(
 
   }
 
+
   else if (type === 'ai') {
 
     bubble.classList.add(
@@ -151,6 +172,7 @@ function addMessageBubble(
     );
 
   }
+
 
   else if (type === 'loading') {
 
@@ -160,6 +182,7 @@ function addMessageBubble(
     );
 
   }
+
 
   else if (type === 'error') {
 
@@ -171,105 +194,20 @@ function addMessageBubble(
   }
 
 
-  bubble.textContent = text;
+  bubble.textContent =
+    text;
 
-  chatContainer.appendChild(
-    bubble
-  );
+
+  if (chatContainer) {
+
+    chatContainer.appendChild(
+      bubble
+    );
+
+  }
+
 
   scrollToBottom();
-
-  return bubble;
-
-}
-
-
-// =========================================================
-// ADD IMAGE MESSAGE
-// =========================================================
-
-function addImageMessage(
-  file,
-  source
-) {
-
-  removeWelcomeMessage();
-
-  const bubble =
-    document.createElement('div');
-
-  bubble.classList.add(
-    'message',
-    'user-message',
-    'image-message'
-  );
-
-
-  const wrapper =
-    document.createElement('div');
-
-  wrapper.style.display = 'flex';
-  wrapper.style.flexDirection = 'column';
-  wrapper.style.gap = '8px';
-
-
-  const image =
-    document.createElement('img');
-
-  image.alt =
-    source === 'camera'
-      ? 'Captured image'
-      : 'Selected image';
-
-  image.style.width = '100%';
-  image.style.maxWidth = '280px';
-  image.style.maxHeight = '320px';
-  image.style.objectFit = 'cover';
-  image.style.borderRadius = '14px';
-  image.style.display = 'block';
-
-
-  const imageURL =
-    URL.createObjectURL(file);
-
-  image.src = imageURL;
-
-
-  const info =
-    document.createElement('small');
-
-  info.textContent =
-    source === 'camera'
-      ? '📸 Photo captured'
-      : '🖼️ Image selected';
-
-  info.style.opacity = '0.8';
-
-
-  wrapper.appendChild(image);
-  wrapper.appendChild(info);
-
-  bubble.appendChild(wrapper);
-
-  chatContainer.appendChild(
-    bubble
-  );
-
-  scrollToBottom();
-
-
-  // Release memory when image is removed
-  image.onload = () => {
-
-    setTimeout(() => {
-
-      URL.revokeObjectURL(
-        imageURL
-      );
-
-    }, 1000);
-
-  };
 
 
   return bubble;
@@ -287,10 +225,14 @@ function replaceBubble(
   type
 ) {
 
-  if (!oldBubble) return;
+  if (!oldBubble) {
+    return;
+  }
+
 
   oldBubble.textContent =
     text;
+
 
   oldBubble.className =
     'message';
@@ -304,6 +246,7 @@ function replaceBubble(
 
   }
 
+
   else if (type === 'error') {
 
     oldBubble.classList.add(
@@ -313,21 +256,26 @@ function replaceBubble(
 
   }
 
+
   scrollToBottom();
 
 }
 
 
 // =========================================================
-// STATUS
+// MODEL STATUS
 // =========================================================
 
 function updateModelStatus() {
 
-  if (!modelStatus) return;
+  if (!modelStatus) {
+    return;
+  }
+
 
   modelStatus.textContent =
     'Infinity AI Core Online ✓';
+
 
   modelStatus.style.color =
     '#22c55e';
@@ -348,15 +296,250 @@ if (aiModel) {
       const selected =
         aiModel.value;
 
+
       const capability =
         AI_CAPABILITIES[selected];
+
 
       if (!capability) {
         return;
       }
 
-      // Provider names are never exposed.
+
+      // Infinity AI remains
+      // the visible identity.
+
       updateModelStatus();
+
+    }
+  );
+
+}
+
+
+// =========================================================
+// IMAGE PREVIEW
+// =========================================================
+
+function createImagePreview(file) {
+
+  removeExistingImagePreview();
+
+
+  if (!file) {
+    return;
+  }
+
+
+  selectedImage = file;
+
+
+  const reader =
+    new FileReader();
+
+
+  reader.onload =
+    function(event) {
+
+      const imageData =
+        event.target.result;
+
+
+      selectedImage.dataURL =
+        imageData;
+
+
+      const preview =
+        document.createElement(
+          'div'
+        );
+
+
+      preview.id =
+        'selectedImagePreview';
+
+
+      preview.className =
+        'selected-image-preview';
+
+
+      preview.innerHTML = `
+
+        <div class="selected-image-inner">
+
+          <img
+            src="${imageData}"
+            alt="Selected image"
+          >
+
+          <div class="selected-image-info">
+
+            <strong>
+              🖼️ Image attached
+            </strong>
+
+            <small>
+              ${escapeHtml(file.name)}
+            </small>
+
+          </div>
+
+          <button
+            id="removeSelectedImage"
+            type="button"
+            aria-label="Remove image"
+          >
+            ×
+          </button>
+
+        </div>
+
+      `;
+
+
+      /*
+        Put the preview immediately
+        above the input area.
+      */
+
+      const inputArea =
+        document.querySelector(
+          '.input-area'
+        );
+
+
+      if (inputArea) {
+
+        inputArea.parentNode.insertBefore(
+          preview,
+          inputArea
+        );
+
+      }
+
+
+      const removeBtn =
+        document.getElementById(
+          'removeSelectedImage'
+        );
+
+
+      if (removeBtn) {
+
+        removeBtn.addEventListener(
+          'click',
+          removeSelectedImage
+        );
+
+      }
+
+
+      scrollToBottom();
+
+    };
+
+
+  reader.readAsDataURL(file);
+
+}
+
+
+// =========================================================
+// REMOVE IMAGE PREVIEW
+// =========================================================
+
+function removeExistingImagePreview() {
+
+  const existing =
+    document.getElementById(
+      'selectedImagePreview'
+    );
+
+
+  if (existing) {
+
+    existing.remove();
+
+  }
+
+}
+
+
+function removeSelectedImage() {
+
+  selectedImage =
+    null;
+
+
+  removeExistingImagePreview();
+
+
+  if (galleryInput) {
+    galleryInput.value = '';
+  }
+
+
+  if (cameraInput) {
+    cameraInput.value = '';
+  }
+
+
+  if (messageInput) {
+    messageInput.focus();
+  }
+
+}
+
+
+// =========================================================
+// ESCAPE HTML
+// =========================================================
+
+function escapeHtml(text) {
+
+  const div =
+    document.createElement(
+      'div'
+    );
+
+
+  div.textContent =
+    text || '';
+
+
+  return div.innerHTML;
+
+}
+
+
+// =========================================================
+// READ FILE AS DATA URL
+// =========================================================
+
+function readFileAsDataURL(file) {
+
+  return new Promise(
+    (resolve, reject) => {
+
+      const reader =
+        new FileReader();
+
+
+      reader.onload =
+        () => resolve(
+          reader.result
+        );
+
+
+      reader.onerror =
+        () => reject(
+          new Error(
+            'Could not read image.'
+          )
+        );
+
+
+      reader.readAsDataURL(file);
 
     }
   );
@@ -379,8 +562,24 @@ async function sendMessage() {
     messageInput.value.trim();
 
 
-  if (!userMessage) {
+  /*
+    IMPORTANT:
+
+    If an image is attached,
+    user must still be able to
+    write a question.
+
+    Example:
+    "এই ছবিতে কী আছে?"
+  */
+
+  if (
+    !userMessage &&
+    !selectedImage
+  ) {
+
     return;
+
   }
 
 
@@ -389,77 +588,228 @@ async function sendMessage() {
   }
 
 
-  // USER MESSAGE
+  // =======================================================
+  // SAVE CURRENT IMAGE
+  // =======================================================
 
-  addMessageBubble(
-    userMessage,
-    'user'
-  );
+  const imageToSend =
+    selectedImage;
 
 
+  // =======================================================
+  // USER DISPLAY
+  // =======================================================
+
+  if (imageToSend) {
+
+    addMessageBubble(
+      `🖼️ ${imageToSend.name}\n\n${userMessage || 'Please analyze this image.'}`,
+      'user'
+    );
+
+  }
+
+  else {
+
+    addMessageBubble(
+      userMessage,
+      'user'
+    );
+
+  }
+
+
+  // =======================================================
   // CLEAR INPUT
+  // =======================================================
 
   messageInput.value = '';
 
   messageInput.focus();
 
 
-  // INFINITY AI LOADING
+  // =======================================================
+  // LOADING
+  // =======================================================
 
   const loadingBubble =
     addMessageBubble(
-      'Infinity AI is thinking... 🤔',
+
+      imageToSend
+        ? 'Infinity AI is analyzing the image... 👁️∞'
+        : 'Infinity AI is thinking... 🤔∞',
+
       'loading'
+
     );
 
 
-  isWaitingForResponse = true;
+  isWaitingForResponse =
+    true;
 
 
   try {
 
+    let requestBody;
+
+
+    // =====================================================
+    // IMAGE REQUEST
+    // =====================================================
+
+    if (imageToSend) {
+
+      let imageData =
+        imageToSend.dataURL;
+
+
+      /*
+        If preview did not create
+        dataURL for some reason,
+        read the file again.
+      */
+
+      if (!imageData) {
+
+        imageData =
+          await readFileAsDataURL(
+            imageToSend
+          );
+
+      }
+
+
+      requestBody = {
+
+        message:
+          userMessage ||
+          'Please analyze this image.',
+
+        image:
+          imageData,
+
+        imageMimeType:
+          imageToSend.type ||
+          'image/jpeg'
+
+      };
+
+    }
+
+
+    // =====================================================
+    // NORMAL TEXT REQUEST
+    // =====================================================
+
+    else {
+
+      requestBody = {
+
+        message:
+          userMessage
+
+      };
+
+    }
+
+
+    // =====================================================
+    // API REQUEST
+    // =====================================================
+
     const response =
       await fetch(
+
         API_URL,
+
         {
-          method: 'POST',
+
+          method:
+            'POST',
 
           headers: {
+
             'Content-Type':
               'application/json'
+
           },
 
-          body: JSON.stringify({
-            message:
-              userMessage
-          })
+          body:
+            JSON.stringify(
+              requestBody
+            )
+
         }
+
       );
 
 
+    // =====================================================
+    // HTTP ERROR
+    // =====================================================
+
     if (!response.ok) {
 
+      let errorMessage =
+        `Server error (${response.status})`;
+
+
+      try {
+
+        const errorData =
+          await response.json();
+
+
+        if (errorData?.error) {
+
+          errorMessage =
+            errorData.error;
+
+        }
+
+      }
+
+      catch (_) {
+
+        // Ignore JSON parsing error
+
+      }
+
+
       throw new Error(
-        `Server error (${response.status})`
+        errorMessage
       );
 
     }
 
+
+    // =====================================================
+    // RESPONSE
+    // =====================================================
 
     const data =
       await response.json();
 
 
     const aiReply =
-      data.reply ||
+      data?.reply ||
       'Infinity AI could not generate a response.';
 
 
+    // =====================================================
+    // SHOW AI RESPONSE
+    // =====================================================
+
     replaceBubble(
+
       loadingBubble,
+
       aiReply,
+
       'ai'
+
     );
+
 
   }
 
@@ -467,15 +817,19 @@ async function sendMessage() {
   catch (error) {
 
     console.error(
-      'Infinity AI API Error:',
+      '❌ Infinity AI API Error:',
       error
     );
 
 
     replaceBubble(
+
       loadingBubble,
-      '⚠️ Infinity AI is temporarily unavailable. Please try again.',
+
+      `⚠️ Infinity AI could not process this request.\n\n${error.message || 'Please try again.'}`,
+
       'error'
+
     );
 
   }
@@ -485,6 +839,18 @@ async function sendMessage() {
 
     isWaitingForResponse =
       false;
+
+
+    /*
+      Remove image only AFTER
+      the request has finished.
+
+      This is important because
+      the user can write a question
+      while the image is attached.
+    */
+
+    removeSelectedImage();
 
   }
 
@@ -516,8 +882,11 @@ if (messageInput) {
     (event) => {
 
       if (
+
         event.key === 'Enter' &&
+
         !event.shiftKey
+
       ) {
 
         event.preventDefault();
@@ -542,9 +911,11 @@ function openPlusMenu() {
     return;
   }
 
+
   plusMenuOverlay.classList.add(
     'show'
   );
+
 
   plusMenuOverlay.setAttribute(
     'aria-hidden',
@@ -570,9 +941,11 @@ function closePlusMenu() {
     return;
   }
 
+
   plusMenuOverlay.classList.remove(
     'show'
   );
+
 
   plusMenuOverlay.setAttribute(
     'aria-hidden',
@@ -592,6 +965,10 @@ function closePlusMenu() {
 }
 
 
+// =========================================================
+// PLUS BUTTON
+// =========================================================
+
 if (plusBtn) {
 
   plusBtn.addEventListener(
@@ -599,6 +976,7 @@ if (plusBtn) {
     () => {
 
       if (
+        plusMenuOverlay &&
         plusMenuOverlay.classList.contains(
           'show'
         )
@@ -620,6 +998,10 @@ if (plusBtn) {
 }
 
 
+// =========================================================
+// CLOSE PLUS BUTTON
+// =========================================================
+
 if (closePlusBtn) {
 
   closePlusBtn.addEventListener(
@@ -631,7 +1013,7 @@ if (closePlusBtn) {
 
 
 // =========================================================
-// CLOSE PLUS MENU OUTSIDE
+// CLICK OUTSIDE PLUS MENU
 // =========================================================
 
 if (plusMenuOverlay) {
@@ -663,7 +1045,9 @@ document.addEventListener(
   'keydown',
   (event) => {
 
-    if (event.key === 'Escape') {
+    if (
+      event.key === 'Escape'
+    ) {
 
       closePlusMenu();
 
@@ -682,7 +1066,9 @@ function showComingSoon(
 ) {
 
   alert(
-    `${featureName}\n\nComing Soon 🚀\n\nThis Infinity AI feature is currently under development.`
+
+    `${featureName}\n\nComing Soon 🚀∞\n\nThis Infinity AI capability is currently under development.`
+
   );
 
 }
@@ -696,13 +1082,14 @@ function handleGallery() {
 
   if (!galleryInput) {
 
-    console.error(
-      'Gallery input not found.'
+    alert(
+      'Gallery input is not available.'
     );
 
     return;
 
   }
+
 
   galleryInput.click();
 
@@ -717,15 +1104,137 @@ function handleCamera() {
 
   if (!cameraInput) {
 
-    console.error(
-      'Camera input not found.'
+    alert(
+      'Camera input is not available.'
     );
 
     return;
 
   }
 
+
   cameraInput.click();
+
+}
+
+
+// =========================================================
+// GALLERY CHANGE
+// =========================================================
+
+if (galleryInput) {
+
+  galleryInput.addEventListener(
+    'change',
+    () => {
+
+      const file =
+        galleryInput.files?.[0];
+
+
+      if (!file) {
+        return;
+      }
+
+
+      if (
+        !file.type.startsWith(
+          'image/'
+        )
+      ) {
+
+        alert(
+          'Please select an image file.'
+        );
+
+        galleryInput.value =
+          '';
+
+        return;
+
+      }
+
+
+      createImagePreview(
+        file
+      );
+
+
+      closePlusMenu();
+
+
+      /*
+        Focus the text box immediately.
+
+        Now the user can type:
+        "এই ছবিতে কী আছে?"
+      */
+
+      if (messageInput) {
+
+        messageInput.focus();
+
+      }
+
+    }
+  );
+
+}
+
+
+// =========================================================
+// CAMERA CHANGE
+// =========================================================
+
+if (cameraInput) {
+
+  cameraInput.addEventListener(
+    'change',
+    () => {
+
+      const file =
+        cameraInput.files?.[0];
+
+
+      if (!file) {
+        return;
+      }
+
+
+      if (
+        !file.type.startsWith(
+          'image/'
+        )
+      ) {
+
+        alert(
+          'Please capture/select an image.'
+        );
+
+        cameraInput.value =
+          '';
+
+        return;
+
+      }
+
+
+      createImagePreview(
+        file
+      );
+
+
+      closePlusMenu();
+
+
+      if (messageInput) {
+
+        messageInput.focus();
+
+      }
+
+    }
+  );
 
 }
 
@@ -745,9 +1254,9 @@ toolItems.forEach(
           tool.dataset.action;
 
 
-        // =========================
+        // =================================================
         // GALLERY
-        // =========================
+        // =================================================
 
         if (
           action === 'gallery'
@@ -762,9 +1271,9 @@ toolItems.forEach(
         }
 
 
-        // =========================
+        // =================================================
         // CAMERA
-        // =========================
+        // =================================================
 
         if (
           action === 'camera'
@@ -779,9 +1288,9 @@ toolItems.forEach(
         }
 
 
-        // =========================
+        // =================================================
         // IMAGE UNDERSTANDING
-        // =========================
+        // =================================================
 
         if (
           action ===
@@ -790,23 +1299,31 @@ toolItems.forEach(
 
           closePlusMenu();
 
-          showComingSoon(
-            '🧠 Image Understanding'
-          );
+
+          /*
+            Image Understanding itself
+            is now handled automatically
+            after selecting an image.
+
+            We don't show Coming Soon here.
+          */
+
+          handleGallery();
 
           return;
 
         }
 
 
-        // =========================
+        // =================================================
         // EVERYTHING ELSE
-        // =========================
+        // =================================================
 
         const title =
           tool.querySelector(
             'strong'
           );
+
 
         const featureName =
           title
@@ -815,6 +1332,7 @@ toolItems.forEach(
 
 
         closePlusMenu();
+
 
         showComingSoon(
           featureName
@@ -825,132 +1343,6 @@ toolItems.forEach(
 
   }
 );
-
-
-// =========================================================
-// GALLERY IMAGE RESULT
-// =========================================================
-
-if (galleryInput) {
-
-  galleryInput.addEventListener(
-    'change',
-    () => {
-
-      const file =
-        galleryInput.files[0];
-
-
-      if (!file) {
-        return;
-      }
-
-
-      // Check image type
-
-      if (
-        !file.type.startsWith(
-          'image/'
-        )
-      ) {
-
-        alert(
-          'Please select an image file.'
-        );
-
-        galleryInput.value = '';
-
-        return;
-
-      }
-
-
-      // Show image preview
-
-      addImageMessage(
-        file,
-        'gallery'
-      );
-
-
-      // Infinity AI status
-
-      addMessageBubble(
-        '🧠 Infinity AI image analysis is coming soon. 🚀',
-        'ai'
-      );
-
-
-      // Allow same image to be selected again
-
-      galleryInput.value = '';
-
-    }
-  );
-
-}
-
-
-// =========================================================
-// CAMERA RESULT
-// =========================================================
-
-if (cameraInput) {
-
-  cameraInput.addEventListener(
-    'change',
-    () => {
-
-      const file =
-        cameraInput.files[0];
-
-
-      if (!file) {
-        return;
-      }
-
-
-      // Check image type
-
-      if (
-        !file.type.startsWith(
-          'image/'
-        )
-      ) {
-
-        alert(
-          'Please capture a valid image.'
-        );
-
-        cameraInput.value = '';
-
-        return;
-
-      }
-
-
-      // Show captured image
-
-      addImageMessage(
-        file,
-        'camera'
-      );
-
-
-      // Infinity AI status
-
-      addMessageBubble(
-        '🧠 Infinity AI image analysis is coming soon. 🚀',
-        'ai'
-      );
-
-
-      cameraInput.value = '';
-
-    }
-  );
-
-}
 
 
 // =========================================================
@@ -994,7 +1386,9 @@ navItems.forEach(
           item.dataset.tab;
 
 
-        if (tab === 'chat') {
+        if (
+          tab === 'chat'
+        ) {
 
           setActiveNav(
             item
@@ -1018,7 +1412,9 @@ navItems.forEach(
 
 
         alert(
-          `${featureName}\n\nComing Soon 🚀`
+
+          `${featureName}\n\nComing Soon 🚀∞`
+
         );
 
 
@@ -1081,7 +1477,7 @@ if (messageInput) {
 
 
 // =========================================================
-// CONSOLE
+// DEBUG
 // =========================================================
 
 console.log(
@@ -1093,13 +1489,17 @@ console.log(
 );
 
 console.log(
-  '⚡ Gemini + Groq fallback system: Active'
+  '👁️ Gemini Vision: Ready'
 );
 
 console.log(
-  '🖼️ Gallery image preview: Active'
+  '📷 Gallery: Ready'
 );
 
 console.log(
-  '📸 Camera image preview: Active'
+  '📸 Camera: Ready'
+);
+
+console.log(
+  '⚡ Backend: Render API'
 );
