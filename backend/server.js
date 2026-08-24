@@ -8,16 +8,15 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // =====================================================
-// AI SUPER APP
+// INFINITY AI
 // Gemini = MAIN BRAIN
 // Groq = FALLBACK AI
+// Gemini Vision = IMAGE UNDERSTANDING
 // =====================================================
 
 const GEMINI_MODEL =
   process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 
-// Groq model is written here directly.
-// You can change it later if needed.
 const GROQ_MODEL =
   process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
 
@@ -27,7 +26,17 @@ const GROQ_MODEL =
 // =====================================================
 
 app.use(cors());
-app.use(express.json());
+
+/*
+  Image base64 data can be large.
+  25mb is only a server request limit.
+  Gemini's own supported limits still apply.
+*/
+app.use(
+  express.json({
+    limit: '25mb'
+  })
+);
 
 
 // =====================================================
@@ -38,6 +47,7 @@ const geminiApiKey =
   process.env.GEMINI_API_KEY;
 
 if (!geminiApiKey) {
+
   console.error(
     '❌ GEMINI_API_KEY is not set.'
   );
@@ -55,40 +65,47 @@ const genAI =
 // GROQ API KEY
 // =====================================================
 
-// Groq key is OPTIONAL.
-// If it is missing, Gemini will continue working normally.
-
 const groqApiKey =
   process.env.GROQ_API_KEY;
 
 if (groqApiKey) {
-  console.log('✅ Groq fallback is configured.');
+
+  console.log(
+    '✅ Groq fallback is configured.'
+  );
+
 } else {
+
   console.log(
     'ℹ️ GROQ_API_KEY not found. Groq fallback is disabled.'
   );
+
 }
 
 
 // =====================================================
-// GEMINI TEST TOOL
+// GEMINI APP STATUS TOOL
 // =====================================================
 
 const getAppStatusTool = {
+
   type: 'function',
 
   name: 'get_app_status',
 
   description:
-    'Returns the current status of the AI Super App backend. Use this when the user asks whether the app or backend is working.',
+    'Returns the current status of the Infinity AI backend.',
 
   parameters: {
+
     type: 'object',
 
     properties: {},
 
     required: []
+
   }
+
 };
 
 
@@ -106,17 +123,22 @@ function getAppStatus() {
 
     mainBrain: 'Gemini',
 
+    vision: 'active',
+
     groqFallback:
-      groqApiKey ? 'configured' : 'disabled',
+      groqApiKey
+        ? 'configured'
+        : 'disabled',
 
     testTool: 'working'
 
   };
+
 }
 
 
 // =====================================================
-// GEMINI BRAIN
+// GEMINI BRAIN — TEXT
 // =====================================================
 
 async function runGeminiBrain(userMessage) {
@@ -125,7 +147,6 @@ async function runGeminiBrain(userMessage) {
 
   let previousInteractionId = null;
 
-  // Maximum 3 tool rounds
   for (let round = 0; round < 3; round++) {
 
     const interaction =
@@ -148,9 +169,13 @@ async function runGeminiBrain(userMessage) {
     const functionResults = [];
 
 
-    for (const step of interaction.steps) {
+    for (
+      const step of interaction.steps || []
+    ) {
 
-      if (step.type === 'function_call') {
+      if (
+        step.type === 'function_call'
+      ) {
 
         console.log(
           `🧠 Gemini requested tool: ${step.name}`
@@ -186,12 +211,16 @@ async function runGeminiBrain(userMessage) {
           call_id: step.id,
 
           result: [
+
             {
+
               type: 'text',
 
               text:
                 JSON.stringify(result)
+
             }
+
           ]
 
         });
@@ -201,15 +230,18 @@ async function runGeminiBrain(userMessage) {
     }
 
 
-    // Gemini gave final answer
-    if (functionResults.length === 0) {
+    if (
+      functionResults.length === 0
+    ) {
 
-      return interaction.output_text;
+      return (
+        interaction.output_text ||
+        'Infinity AI could not generate a response.'
+      );
 
     }
 
 
-    // Send tool result back to Gemini
     input =
       functionResults;
 
@@ -222,14 +254,165 @@ async function runGeminiBrain(userMessage) {
   throw new Error(
     'Gemini tool execution limit reached.'
   );
+
+}
+
+
+// =====================================================
+// GEMINI VISION
+// IMAGE + TEXT
+// =====================================================
+
+async function runGeminiVision(
+  userMessage,
+  imageData,
+  mimeType
+) {
+
+  if (!imageData) {
+
+    throw new Error(
+      'Image data is missing.'
+    );
+
+  }
+
+
+  /*
+    Accept both:
+
+    1. Pure base64
+    2. data:image/jpeg;base64,XXXX
+  */
+
+  let base64Image =
+    String(imageData);
+
+
+  if (
+    base64Image.includes(
+      'base64,'
+    )
+  ) {
+
+    base64Image =
+      base64Image.split(
+        'base64,'
+      )[1];
+
+  }
+
+
+  if (!base64Image) {
+
+    throw new Error(
+      'Invalid image data.'
+    );
+
+  }
+
+
+  const safeMimeType =
+    (
+      typeof mimeType === 'string' &&
+      mimeType.startsWith('image/')
+    )
+      ? mimeType
+      : 'image/jpeg';
+
+
+  console.log(
+    `🖼️ Gemini Vision: ${safeMimeType}`
+  );
+
+
+  /*
+    Gemini Interactions API supports
+    multimodal input:
+    text + image.
+  */
+
+  const interaction =
+    await genAI.interactions.create({
+
+      model: GEMINI_MODEL,
+
+      input: [
+
+        {
+
+          type: 'text',
+
+          text:
+            `You are Infinity AI.
+
+The user has provided an image.
+
+Analyze the image carefully and answer the user's question.
+
+User question:
+${userMessage}
+
+If the user asks about text in the image, read the visible text carefully.
+
+If the user asks what is in the image, describe the important visible elements.
+
+If the user asks about a chart, diagram, screenshot, or document, explain what can actually be understood from the image.
+
+Do not claim to see something that is not visible.
+
+Answer naturally and helpfully.`
+
+        },
+
+        {
+
+          type: 'image',
+
+          data:
+            base64Image,
+
+          mime_type:
+            safeMimeType
+
+        }
+
+      ]
+
+    });
+
+
+  const reply =
+    interaction.output_text;
+
+
+  if (!reply) {
+
+    throw new Error(
+      'Gemini Vision returned an empty response.'
+    );
+
+  }
+
+
+  console.log(
+    '✅ Gemini Vision answered successfully.'
+  );
+
+
+  return reply;
+
 }
 
 
 // =====================================================
 // GROQ FALLBACK
+// TEXT ONLY
 // =====================================================
 
-async function runGroqFallback(userMessage) {
+async function runGroqFallback(
+  userMessage
+) {
 
   if (!groqApiKey) {
 
@@ -247,7 +430,9 @@ async function runGroqFallback(userMessage) {
 
   const response =
     await fetch(
+
       'https://api.groq.com/openai/v1/chat/completions',
+
       {
 
         method: 'POST',
@@ -264,22 +449,27 @@ async function runGroqFallback(userMessage) {
 
         body: JSON.stringify({
 
-          model: GROQ_MODEL,
+          model:
+            GROQ_MODEL,
 
           messages: [
 
             {
+
               role: 'system',
 
               content:
-                'You are the fallback AI assistant of an AI Super App. Give helpful, accurate and concise answers.'
+                'You are Infinity AI, a helpful and accurate AI assistant. Give clear answers.'
+
             },
 
             {
+
               role: 'user',
 
               content:
                 userMessage
+
             }
 
           ]
@@ -287,6 +477,7 @@ async function runGroqFallback(userMessage) {
         })
 
       }
+
     );
 
 
@@ -320,18 +511,17 @@ async function runGroqFallback(userMessage) {
 
 
   return reply;
+
 }
 
 
 // =====================================================
-// SMART AI ROUTER
+// SMART TEXT ROUTER
 // =====================================================
 
-async function getAIReply(userMessage) {
-
-  // ---------------------------------------------------
-  // 1. Try Gemini first
-  // ---------------------------------------------------
+async function getAIReply(
+  userMessage
+) {
 
   try {
 
@@ -373,10 +563,6 @@ async function getAIReply(userMessage) {
       geminiError
     );
 
-
-    // -------------------------------------------------
-    // 2. Try Groq
-    // -------------------------------------------------
 
     if (groqApiKey) {
 
@@ -420,9 +606,84 @@ async function getAIReply(userMessage) {
     }
 
 
-    // Both failed
     throw new Error(
       'Both Gemini and Groq failed.'
+    );
+
+  }
+
+}
+
+
+// =====================================================
+// SMART VISION ROUTER
+// =====================================================
+
+async function getVisionReply(
+  userMessage,
+  imageData,
+  mimeType
+) {
+
+  /*
+    Vision request:
+    Gemini Vision first.
+  */
+
+  try {
+
+    console.log(
+      '🖼️ Trying Gemini Vision...'
+    );
+
+
+    const reply =
+      await runGeminiVision(
+
+        userMessage,
+
+        imageData,
+
+        mimeType
+
+      );
+
+
+    return {
+
+      reply,
+
+      provider: 'gemini',
+
+      brain: 'gemini',
+
+      vision: true,
+
+      fallbackUsed: false
+
+    };
+
+  }
+
+  catch (geminiError) {
+
+    console.error(
+      '❌ Gemini Vision failed:',
+      geminiError.message ||
+      geminiError
+    );
+
+
+    /*
+      Important:
+
+      Groq fallback here is intentionally NOT
+      used for image understanding because your
+      current Groq fallback is text-only.
+    */
+
+    throw new Error(
+      'Gemini Vision failed. Image could not be analyzed.'
     );
 
   }
@@ -445,6 +706,8 @@ app.get(
       router: 'active',
 
       mainBrain: 'gemini',
+
+      vision: 'active',
 
       providers: {
 
@@ -478,6 +741,9 @@ app.get(
 
 // =====================================================
 // CHAT API
+// Supports:
+// 1. Text only
+// 2. Image + text
 // =====================================================
 
 app.post(
@@ -486,9 +752,61 @@ app.post(
 
     try {
 
-      const { message } =
-        req.body;
+      const {
+        message,
+        image,
+        imageMimeType
+      } = req.body;
 
+
+      // =================================================
+      // IMAGE REQUEST
+      // =================================================
+
+      if (image) {
+
+        if (
+          !message ||
+          typeof message !== 'string'
+        ) {
+
+          return res.status(400).json({
+
+            error:
+              'Please provide a question/message with the image.'
+
+          });
+
+        }
+
+
+        console.log(
+          `🖼️ Image request: ${message.trim()}`
+        );
+
+
+        const result =
+          await getVisionReply(
+
+            message.trim(),
+
+            image,
+
+            imageMimeType
+
+          );
+
+
+        return res.json(
+          result
+        );
+
+      }
+
+
+      // =================================================
+      // NORMAL TEXT REQUEST
+      // =================================================
 
       if (
         !message ||
@@ -517,7 +835,9 @@ app.post(
         );
 
 
-      res.json(result);
+      return res.json(
+        result
+      );
 
     }
 
@@ -530,10 +850,10 @@ app.post(
       );
 
 
-      res.status(500).json({
+      return res.status(500).json({
 
         error:
-          'AI response failed. Please try again later.'
+          'Infinity AI could not process the request. Please try again.'
 
       });
 
@@ -599,6 +919,10 @@ app.listen(
 
     console.log(
       `🧠 Main Brain: Gemini (${GEMINI_MODEL})`
+    );
+
+    console.log(
+      `👁️ Vision: Gemini Vision (${GEMINI_MODEL})`
     );
 
     console.log(
