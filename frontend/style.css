@@ -1960,3 +1960,308 @@ body {
     -webkit-overflow-scrolling: touch;
   }
 }
+/* =========================================================
+   INFINITY AI — FUTURISTIC IMAGE ATTACHMENT
+   ========================================================= */
+
+.image-attachment-area {
+  width: 100%;
+  padding: 8px 12px 0;
+  display: none;
+  animation: infinityAttachmentIn 0.35s ease;
+}
+
+.image-attachment-area.show {
+  display: block;
+}
+
+.image-attachment-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+
+  padding: 10px;
+
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(76, 29, 149, 0.28),
+      rgba(30, 41, 90, 0.35),
+      rgba(8, 15, 35, 0.72)
+    );
+
+  box-shadow:
+    0 0 25px rgba(124, 58, 237, 0.12),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+
+  overflow: hidden;
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.image-attachment-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+
+  border-radius: inherit;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(139, 92, 246, 0.45),
+      rgba(59, 130, 246, 0.35),
+      transparent
+    );
+
+  opacity: 0.45;
+
+  animation: attachmentEnergy 3s linear infinite;
+
+  pointer-events: none;
+}
+
+.image-attachment-preview {
+  position: relative;
+
+  width: 58px;
+  height: 58px;
+
+  flex-shrink: 0;
+
+  border-radius: 14px;
+
+  overflow: hidden;
+
+  border: 1px solid rgba(255,255,255,0.14);
+
+  background: rgba(0,0,0,0.3);
+
+  box-shadow:
+    0 0 18px rgba(99,102,241,0.22);
+}
+
+.image-attachment-preview img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+}
+
+.image-attachment-info {
+  position: relative;
+
+  min-width: 0;
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.image-attachment-title {
+  color: #f8fafc;
+
+  font-size: 0.78rem;
+  font-weight: 700;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.image-attachment-meta {
+  color: #94a3b8;
+
+  font-size: 0.62rem;
+}
+
+.image-attachment-status {
+  color: #a5b4fc;
+
+  font-size: 0.59rem;
+
+  display: flex;
+  align-items: center;
+
+  gap: 4px;
+}
+
+.image-attachment-status::before {
+  content: "";
+
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: #818cf8;
+
+  box-shadow:
+    0 0 8px rgba(129,140,248,0.9);
+
+  animation: attachmentPulse 1.5s infinite;
+}
+
+.image-attachment-actions {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
+  gap: 5px;
+}
+
+.image-attachment-action {
+  width: 32px;
+  height: 32px;
+
+  border-radius: 10px;
+
+  border: 1px solid rgba(255,255,255,0.09);
+
+  background: rgba(255,255,255,0.045);
+
+  color: #c7d2fe;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  font-size: 0.85rem;
+
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.image-attachment-action:hover {
+  transform: translateY(-1px);
+
+  border-color: rgba(139,92,246,0.5);
+
+  background: rgba(124,58,237,0.15);
+
+  box-shadow:
+    0 0 15px rgba(124,58,237,0.18);
+}
+
+.image-attachment-action:active {
+  transform: scale(0.92);
+}
+
+.image-attachment-remove {
+  color: #fca5a5;
+}
+
+.image-attachment-remove:hover {
+  border-color: rgba(248,113,113,0.45);
+
+  background: rgba(127,29,29,0.18);
+}
+
+
+/* Preview entrance */
+
+@keyframes infinityAttachmentIn {
+
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+}
+
+
+/* Moving energy border */
+
+@keyframes attachmentEnergy {
+
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+
+}
+
+
+/* Status pulse */
+
+@keyframes attachmentPulse {
+
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+
+}
+
+
+/* Mobile */
+
+@media (max-width: 480px) {
+
+  .image-attachment-area {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .image-attachment-card {
+    padding: 8px;
+
+    gap: 9px;
+
+    border-radius: 16px;
+  }
+
+  .image-attachment-preview {
+    width: 52px;
+    height: 52px;
+  }
+
+  .image-attachment-title {
+    font-size: 0.72rem;
+  }
+
+  .image-attachment-meta,
+  .image-attachment-status {
+    font-size: 0.55rem;
+  }
+
+  .image-attachment-action {
+    width: 29px;
+    height: 29px;
+  }
+
+}
