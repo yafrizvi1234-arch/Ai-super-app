@@ -1,8 +1,8 @@
-// =========================================================
-// INFINITY AI — COMPLETE FRONTEND
-// Text Chat + Gallery + Camera + Gemini Vision
-// Backend: Render
-// =========================================================
+// ===================================
+// INFINITY AI — Frontend Logic
+// Main Brain: Infinity AI
+// Backend: Gemini + Groq Fallback
+// ===================================
 
 const API_URL =
   'https://ai-super-app-3fr7.onrender.com/api/chat';
@@ -30,9 +30,6 @@ const aiModel =
 const modelStatus =
   document.getElementById('modelStatus');
 
-
-// PLUS MENU
-
 const plusBtn =
   document.getElementById('plusBtn');
 
@@ -44,9 +41,6 @@ const closePlusBtn =
 
 const toolItems =
   document.querySelectorAll('.tool-item');
-
-
-// IMAGE INPUTS
 
 const galleryInput =
   document.getElementById('galleryInput');
@@ -61,16 +55,11 @@ const cameraInput =
 
 let isWaitingForResponse = false;
 
-
-// Currently selected image
-
 let selectedImage = null;
 
 
 // =========================================================
 // AI CAPABILITIES
-// These are UI capabilities.
-// They do not manually switch backend providers.
 // =========================================================
 
 const AI_CAPABILITIES = {
@@ -119,7 +108,7 @@ function scrollToBottom() {
 
 
 // =========================================================
-// REMOVE WELCOME MESSAGE
+// REMOVE WELCOME
 // =========================================================
 
 function removeWelcomeMessage() {
@@ -150,7 +139,6 @@ function addMessageBubble(
   const bubble =
     document.createElement('div');
 
-
   bubble.classList.add(
     'message'
   );
@@ -164,7 +152,6 @@ function addMessageBubble(
 
   }
 
-
   else if (type === 'ai') {
 
     bubble.classList.add(
@@ -172,7 +159,6 @@ function addMessageBubble(
     );
 
   }
-
 
   else if (type === 'loading') {
 
@@ -182,7 +168,6 @@ function addMessageBubble(
     );
 
   }
-
 
   else if (type === 'error') {
 
@@ -246,7 +231,6 @@ function replaceBubble(
 
   }
 
-
   else if (type === 'error') {
 
     oldBubble.classList.add(
@@ -306,187 +290,10 @@ if (aiModel) {
       }
 
 
-      // Infinity AI remains
-      // the visible identity.
-
       updateModelStatus();
 
     }
   );
-
-}
-
-
-// =========================================================
-// IMAGE PREVIEW
-// =========================================================
-
-function createImagePreview(file) {
-
-  removeExistingImagePreview();
-
-
-  if (!file) {
-    return;
-  }
-
-
-  selectedImage = file;
-
-
-  const reader =
-    new FileReader();
-
-
-  reader.onload =
-    function(event) {
-
-      const imageData =
-        event.target.result;
-
-
-      selectedImage.dataURL =
-        imageData;
-
-
-      const preview =
-        document.createElement(
-          'div'
-        );
-
-
-      preview.id =
-        'selectedImagePreview';
-
-
-      preview.className =
-        'selected-image-preview';
-
-
-      preview.innerHTML = `
-
-        <div class="selected-image-inner">
-
-          <img
-            src="${imageData}"
-            alt="Selected image"
-          >
-
-          <div class="selected-image-info">
-
-            <strong>
-              🖼️ Image attached
-            </strong>
-
-            <small>
-              ${escapeHtml(file.name)}
-            </small>
-
-          </div>
-
-          <button
-            id="removeSelectedImage"
-            type="button"
-            aria-label="Remove image"
-          >
-            ×
-          </button>
-
-        </div>
-
-      `;
-
-
-      /*
-        Put the preview immediately
-        above the input area.
-      */
-
-      const inputArea =
-        document.querySelector(
-          '.input-area'
-        );
-
-
-      if (inputArea) {
-
-        inputArea.parentNode.insertBefore(
-          preview,
-          inputArea
-        );
-
-      }
-
-
-      const removeBtn =
-        document.getElementById(
-          'removeSelectedImage'
-        );
-
-
-      if (removeBtn) {
-
-        removeBtn.addEventListener(
-          'click',
-          removeSelectedImage
-        );
-
-      }
-
-
-      scrollToBottom();
-
-    };
-
-
-  reader.readAsDataURL(file);
-
-}
-
-
-// =========================================================
-// REMOVE IMAGE PREVIEW
-// =========================================================
-
-function removeExistingImagePreview() {
-
-  const existing =
-    document.getElementById(
-      'selectedImagePreview'
-    );
-
-
-  if (existing) {
-
-    existing.remove();
-
-  }
-
-}
-
-
-function removeSelectedImage() {
-
-  selectedImage =
-    null;
-
-
-  removeExistingImagePreview();
-
-
-  if (galleryInput) {
-    galleryInput.value = '';
-  }
-
-
-  if (cameraInput) {
-    cameraInput.value = '';
-  }
-
-
-  if (messageInput) {
-    messageInput.focus();
-  }
 
 }
 
@@ -526,23 +333,335 @@ function readFileAsDataURL(file) {
 
 
       reader.onload =
-        () => resolve(
-          reader.result
-        );
+        () => {
+
+          resolve(
+            reader.result
+          );
+
+        };
 
 
       reader.onerror =
-        () => reject(
-          new Error(
-            'Could not read image.'
+        () => {
+
+          reject(
+            new Error(
+              'Could not read image.'
+            )
+          );
+
+        };
+
+
+      reader.readAsDataURL(
+        file
+      );
+
+    }
+  );
+
+}
+
+
+// =========================================================
+// CREATE FUTURISTIC IMAGE PREVIEW
+// =========================================================
+
+function createImagePreview(
+  file,
+  source = 'gallery'
+) {
+
+  removeExistingImagePreview();
+
+
+  if (!file) {
+    return;
+  }
+
+
+  selectedImage = {
+
+    file: file,
+
+    dataURL: null,
+
+    source: source
+
+  };
+
+
+  const reader =
+    new FileReader();
+
+
+  reader.onload =
+    function(event) {
+
+      if (!selectedImage) {
+        return;
+      }
+
+
+      selectedImage.dataURL =
+        event.target.result;
+
+
+      const preview =
+        document.createElement(
+          'div'
+        );
+
+
+      preview.id =
+        'selectedImagePreview';
+
+
+      preview.className =
+        'selected-image-preview';
+
+
+      const sizeKB =
+        Math.max(
+          1,
+          Math.round(
+            file.size / 1024
           )
         );
 
 
-      reader.readAsDataURL(file);
+      preview.innerHTML = `
 
-    }
+        <div class="selected-image-inner">
+
+          <div class="selected-image-thumb">
+
+            <img
+              src="${event.target.result}"
+              alt="Selected image"
+            >
+
+          </div>
+
+
+          <div class="selected-image-info">
+
+            <strong>
+              🖼️ Image Attached
+            </strong>
+
+            <small>
+              ${escapeHtml(file.name)}
+            </small>
+
+            <span>
+              ${sizeKB} KB • Ready for Infinity AI
+            </span>
+
+          </div>
+
+
+          <div class="selected-image-actions">
+
+            <button
+              id="changeSelectedImage"
+              type="button"
+              aria-label="Change image"
+              title="Change image"
+            >
+              ↻
+            </button>
+
+
+            <button
+              id="removeSelectedImage"
+              type="button"
+              aria-label="Remove image"
+              title="Remove image"
+            >
+              ×
+            </button>
+
+          </div>
+
+        </div>
+
+      `;
+
+
+      const inputArea =
+        document.querySelector(
+          '.input-area'
+        );
+
+
+      if (inputArea) {
+
+        inputArea.parentNode.insertBefore(
+          preview,
+          inputArea
+        );
+
+      }
+
+
+      // ===================================================
+      // REMOVE IMAGE
+      // ===================================================
+
+      const removeBtn =
+        document.getElementById(
+          'removeSelectedImage'
+        );
+
+
+      if (removeBtn) {
+
+        removeBtn.addEventListener(
+          'click',
+          () => {
+
+            removeSelectedImage();
+
+          }
+        );
+
+      }
+
+
+      // ===================================================
+      // CHANGE IMAGE
+      // ===================================================
+
+      const changeBtn =
+        document.getElementById(
+          'changeSelectedImage'
+        );
+
+
+      if (changeBtn) {
+
+        changeBtn.addEventListener(
+          'click',
+          () => {
+
+            if (
+              selectedImage &&
+              selectedImage.source ===
+              'camera'
+            ) {
+
+              if (cameraInput) {
+
+                cameraInput.click();
+
+              }
+
+            }
+
+            else {
+
+              if (galleryInput) {
+
+                galleryInput.click();
+
+              }
+
+            }
+
+          }
+        );
+
+      }
+
+
+      scrollToBottom();
+
+
+      // Focus message input
+
+      if (messageInput) {
+
+        messageInput.focus();
+
+      }
+
+    };
+
+
+  reader.onerror =
+    function() {
+
+      console.error(
+        '❌ Image preview failed.'
+      );
+
+    };
+
+
+  reader.readAsDataURL(
+    file
   );
+
+}
+
+
+// =========================================================
+// REMOVE EXISTING IMAGE PREVIEW
+// =========================================================
+
+function removeExistingImagePreview() {
+
+  const existing =
+    document.getElementById(
+      'selectedImagePreview'
+    );
+
+
+  if (existing) {
+
+    existing.remove();
+
+  }
+
+}
+
+
+// =========================================================
+// REMOVE SELECTED IMAGE
+// =========================================================
+
+function removeSelectedImage() {
+
+  selectedImage =
+    null;
+
+
+  removeExistingImagePreview();
+
+
+  if (galleryInput) {
+
+    galleryInput.value =
+      '';
+
+  }
+
+
+  if (cameraInput) {
+
+    cameraInput.value =
+      '';
+
+  }
+
+
+  if (messageInput) {
+
+    messageInput.focus();
+
+  }
 
 }
 
@@ -563,14 +682,8 @@ async function sendMessage() {
 
 
   /*
-    IMPORTANT:
-
-    If an image is attached,
-    user must still be able to
-    write a question.
-
-    Example:
-    "এই ছবিতে কী আছে?"
+    Image can be sent with
+    a question OR without one.
   */
 
   if (
@@ -584,7 +697,9 @@ async function sendMessage() {
 
 
   if (isWaitingForResponse) {
+
     return;
+
   }
 
 
@@ -597,14 +712,20 @@ async function sendMessage() {
 
 
   // =======================================================
-  // USER DISPLAY
+  // USER MESSAGE
   // =======================================================
 
   if (imageToSend) {
 
     addMessageBubble(
-      `🖼️ ${imageToSend.name}\n\n${userMessage || 'Please analyze this image.'}`,
+
+      `🖼️ ${imageToSend.file.name}\n\n${
+        userMessage ||
+        'Please analyze this image.'
+      }`,
+
       'user'
+
     );
 
   }
@@ -620,10 +741,11 @@ async function sendMessage() {
 
 
   // =======================================================
-  // CLEAR INPUT
+  // CLEAR TEXT INPUT
   // =======================================================
 
-  messageInput.value = '';
+  messageInput.value =
+    '';
 
   messageInput.focus();
 
@@ -636,7 +758,9 @@ async function sendMessage() {
     addMessageBubble(
 
       imageToSend
+
         ? 'Infinity AI is analyzing the image... 👁️∞'
+
         : 'Infinity AI is thinking... 🤔∞',
 
       'loading'
@@ -663,17 +787,11 @@ async function sendMessage() {
         imageToSend.dataURL;
 
 
-      /*
-        If preview did not create
-        dataURL for some reason,
-        read the file again.
-      */
-
       if (!imageData) {
 
         imageData =
           await readFileAsDataURL(
-            imageToSend
+            imageToSend.file
           );
 
       }
@@ -689,7 +807,7 @@ async function sendMessage() {
           imageData,
 
         imageMimeType:
-          imageToSend.type ||
+          imageToSend.file.type ||
           'image/jpeg'
 
       };
@@ -698,7 +816,7 @@ async function sendMessage() {
 
 
     // =====================================================
-    // NORMAL TEXT REQUEST
+    // TEXT REQUEST
     // =====================================================
 
     else {
@@ -771,7 +889,7 @@ async function sendMessage() {
 
       catch (_) {
 
-        // Ignore JSON parsing error
+        // Ignore JSON parse error
 
       }
 
@@ -810,7 +928,6 @@ async function sendMessage() {
 
     );
 
-
   }
 
 
@@ -826,7 +943,10 @@ async function sendMessage() {
 
       loadingBubble,
 
-      `⚠️ Infinity AI could not process this request.\n\n${error.message || 'Please try again.'}`,
+      `⚠️ Infinity AI could not process this request.\n\n${
+        error.message ||
+        'Please try again.'
+      }`,
 
       'error'
 
@@ -842,12 +962,8 @@ async function sendMessage() {
 
 
     /*
-      Remove image only AFTER
-      the request has finished.
-
-      This is important because
-      the user can write a question
-      while the image is attached.
+      Remove attachment AFTER
+      request is completely finished.
     */
 
     removeSelectedImage();
@@ -976,10 +1092,13 @@ if (plusBtn) {
     () => {
 
       if (
+
         plusMenuOverlay &&
+
         plusMenuOverlay.classList.contains(
           'show'
         )
+
       ) {
 
         closePlusMenu();
@@ -1023,8 +1142,10 @@ if (plusMenuOverlay) {
     (event) => {
 
       if (
+
         event.target ===
         plusMenuOverlay
+
       ) {
 
         closePlusMenu();
@@ -1133,7 +1254,9 @@ if (galleryInput) {
 
 
       if (!file) {
+
         return;
+
       }
 
 
@@ -1156,19 +1279,13 @@ if (galleryInput) {
 
 
       createImagePreview(
-        file
+        file,
+        'gallery'
       );
 
 
       closePlusMenu();
 
-
-      /*
-        Focus the text box immediately.
-
-        Now the user can type:
-        "এই ছবিতে কী আছে?"
-      */
 
       if (messageInput) {
 
@@ -1197,7 +1314,9 @@ if (cameraInput) {
 
 
       if (!file) {
+
         return;
+
       }
 
 
@@ -1220,7 +1339,8 @@ if (cameraInput) {
 
 
       createImagePreview(
-        file
+        file,
+        'camera'
       );
 
 
@@ -1298,15 +1418,6 @@ toolItems.forEach(
         ) {
 
           closePlusMenu();
-
-
-          /*
-            Image Understanding itself
-            is now handled automatically
-            after selecting an image.
-
-            We don't show Coming Soon here.
-          */
 
           handleGallery();
 
@@ -1498,6 +1609,14 @@ console.log(
 
 console.log(
   '📸 Camera: Ready'
+);
+
+console.log(
+  '🔄 Image Change: Ready'
+);
+
+console.log(
+  '❌ Image Remove: Ready'
 );
 
 console.log(
