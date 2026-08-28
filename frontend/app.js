@@ -2,6 +2,7 @@
 // INFINITY AI — Frontend Logic
 // Main Brain: Infinity AI
 // Backend: Gemini + Groq Fallback
+// Image Vision: Gemini
 // ===================================
 
 const API_URL =
@@ -101,8 +102,12 @@ function scrollToBottom() {
     return;
   }
 
-  chatContainer.scrollTop =
-    chatContainer.scrollHeight;
+  requestAnimationFrame(() => {
+
+    chatContainer.scrollTop =
+      chatContainer.scrollHeight;
+
+  });
 
 }
 
@@ -119,7 +124,9 @@ function removeWelcomeMessage() {
     );
 
   if (welcome) {
+
     welcome.remove();
+
   }
 
 }
@@ -180,7 +187,7 @@ function addMessageBubble(
 
 
   bubble.textContent =
-    text;
+    text || '';
 
 
   if (chatContainer) {
@@ -216,7 +223,7 @@ function replaceBubble(
 
 
   oldBubble.textContent =
-    text;
+    text || '';
 
 
   oldBubble.className =
@@ -328,6 +335,19 @@ function readFileAsDataURL(file) {
   return new Promise(
     (resolve, reject) => {
 
+      if (!file) {
+
+        reject(
+          new Error(
+            'No image selected.'
+          )
+        );
+
+        return;
+
+      }
+
+
       const reader =
         new FileReader();
 
@@ -381,6 +401,22 @@ function createImagePreview(
   }
 
 
+  // Only allow images
+
+  if (
+    !file.type ||
+    !file.type.startsWith('image/')
+  ) {
+
+    alert(
+      'Please select an image file.'
+    );
+
+    return;
+
+  }
+
+
   selectedImage = {
 
     file: file,
@@ -408,18 +444,22 @@ function createImagePreview(
         event.target.result;
 
 
-      const preview =
+      // ================================================
+      // PREVIEW CONTAINER
+      // ================================================
+
+      const previewArea =
         document.createElement(
           'div'
         );
 
 
-      preview.id =
+      previewArea.id =
         'selectedImagePreview';
 
 
-      preview.className =
-        'selected-image-preview';
+      previewArea.className =
+        'image-attachment-area show';
 
 
       const sizeKB =
@@ -431,11 +471,15 @@ function createImagePreview(
         );
 
 
-      preview.innerHTML = `
+      // ================================================
+      // PREVIEW HTML
+      // ================================================
 
-        <div class="selected-image-inner">
+      previewArea.innerHTML = `
 
-          <div class="selected-image-thumb">
+        <div class="image-attachment-card">
+
+          <div class="image-attachment-preview">
 
             <img
               src="${event.target.result}"
@@ -445,26 +489,29 @@ function createImagePreview(
           </div>
 
 
-          <div class="selected-image-info">
+          <div class="image-attachment-info">
 
-            <strong>
-              🖼️ Image Attached
-            </strong>
-
-            <small>
+            <div class="image-attachment-title">
               ${escapeHtml(file.name)}
-            </small>
+            </div>
 
-            <span>
-              ${sizeKB} KB • Ready for Infinity AI
-            </span>
+
+            <div class="image-attachment-meta">
+              ${sizeKB} KB • ${escapeHtml(file.type || 'image')}
+            </div>
+
+
+            <div class="image-attachment-status">
+              Ready for Infinity AI
+            </div>
 
           </div>
 
 
-          <div class="selected-image-actions">
+          <div class="image-attachment-actions">
 
             <button
+              class="image-attachment-action"
               id="changeSelectedImage"
               type="button"
               aria-label="Change image"
@@ -475,6 +522,7 @@ function createImagePreview(
 
 
             <button
+              class="image-attachment-action image-attachment-remove"
               id="removeSelectedImage"
               type="button"
               aria-label="Remove image"
@@ -490,6 +538,10 @@ function createImagePreview(
       `;
 
 
+      // ================================================
+      // INSERT BEFORE INPUT AREA
+      // ================================================
+
       const inputArea =
         document.querySelector(
           '.input-area'
@@ -499,16 +551,16 @@ function createImagePreview(
       if (inputArea) {
 
         inputArea.parentNode.insertBefore(
-          preview,
+          previewArea,
           inputArea
         );
 
       }
 
 
-      // ===================================================
-      // REMOVE IMAGE
-      // ===================================================
+      // ================================================
+      // REMOVE IMAGE BUTTON
+      // ================================================
 
       const removeBtn =
         document.getElementById(
@@ -530,9 +582,9 @@ function createImagePreview(
       }
 
 
-      // ===================================================
-      // CHANGE IMAGE
-      // ===================================================
+      // ================================================
+      // CHANGE IMAGE BUTTON
+      // ================================================
 
       const changeBtn =
         document.getElementById(
@@ -548,11 +600,12 @@ function createImagePreview(
 
             if (
               selectedImage &&
-              selectedImage.source ===
-              'camera'
+              selectedImage.source === 'camera'
             ) {
 
               if (cameraInput) {
+
+                cameraInput.value = '';
 
                 cameraInput.click();
 
@@ -563,6 +616,8 @@ function createImagePreview(
             else {
 
               if (galleryInput) {
+
+                galleryInput.value = '';
 
                 galleryInput.click();
 
@@ -579,7 +634,7 @@ function createImagePreview(
       scrollToBottom();
 
 
-      // Focus message input
+      // Focus input
 
       if (messageInput) {
 
@@ -596,6 +651,12 @@ function createImagePreview(
       console.error(
         '❌ Image preview failed.'
       );
+
+
+      removeExistingImagePreview();
+
+      selectedImage =
+        null;
 
     };
 
@@ -667,6 +728,56 @@ function removeSelectedImage() {
 
 
 // =========================================================
+// VALIDATE IMAGE
+// =========================================================
+
+function validateImage(file) {
+
+  if (!file) {
+
+    return false;
+
+  }
+
+
+  if (
+    !file.type ||
+    !file.type.startsWith('image/')
+  ) {
+
+    alert(
+      'Please select a valid image.'
+    );
+
+    return false;
+
+  }
+
+
+  // Optional safety limit:
+  // 10 MB
+
+  const maxSize =
+    10 * 1024 * 1024;
+
+
+  if (file.size > maxSize) {
+
+    alert(
+      'Image is too large. Please select an image under 10 MB.'
+    );
+
+    return false;
+
+  }
+
+
+  return true;
+
+}
+
+
+// =========================================================
 // SEND MESSAGE
 // =========================================================
 
@@ -681,10 +792,7 @@ async function sendMessage() {
     messageInput.value.trim();
 
 
-  /*
-    Image can be sent with
-    a question OR without one.
-  */
+  // Image OR text required
 
   if (
     !userMessage &&
@@ -695,6 +803,8 @@ async function sendMessage() {
 
   }
 
+
+  // Prevent double requests
 
   if (isWaitingForResponse) {
 
@@ -733,21 +843,22 @@ async function sendMessage() {
   else {
 
     addMessageBubble(
+
       userMessage,
+
       'user'
+
     );
 
   }
 
 
   // =======================================================
-  // CLEAR TEXT INPUT
+  // CLEAR INPUT
   // =======================================================
 
   messageInput.value =
     '';
-
-  messageInput.focus();
 
 
   // =======================================================
@@ -770,6 +881,16 @@ async function sendMessage() {
 
   isWaitingForResponse =
     true;
+
+
+  // Disable send button
+
+  if (sendBtn) {
+
+    sendBtn.disabled =
+      true;
+
+  }
 
 
   try {
@@ -831,6 +952,14 @@ async function sendMessage() {
     }
 
 
+    console.log(
+      '📤 Sending request to Infinity AI...',
+      imageToSend
+        ? 'Image + Text'
+        : 'Text'
+    );
+
+
     // =====================================================
     // API REQUEST
     // =====================================================
@@ -885,11 +1014,18 @@ async function sendMessage() {
 
         }
 
+        else if (errorData?.message) {
+
+          errorMessage =
+            errorData.message;
+
+        }
+
       }
 
       catch (_) {
 
-        // Ignore JSON parse error
+        // Ignore JSON parsing error
 
       }
 
@@ -909,8 +1045,16 @@ async function sendMessage() {
       await response.json();
 
 
+    console.log(
+      '📥 Infinity AI response:',
+      data
+    );
+
+
     const aiReply =
       data?.reply ||
+      data?.response ||
+      data?.text ||
       'Infinity AI could not generate a response.';
 
 
@@ -944,7 +1088,7 @@ async function sendMessage() {
       loadingBubble,
 
       `⚠️ Infinity AI could not process this request.\n\n${
-        error.message ||
+        error?.message ||
         'Please try again.'
       }`,
 
@@ -961,10 +1105,16 @@ async function sendMessage() {
       false;
 
 
-    /*
-      Remove attachment AFTER
-      request is completely finished.
-    */
+    if (sendBtn) {
+
+      sendBtn.disabled =
+        false;
+
+    }
+
+
+    // Remove attachment
+    // only after request finishes
 
     removeSelectedImage();
 
@@ -1142,10 +1292,8 @@ if (plusMenuOverlay) {
     (event) => {
 
       if (
-
         event.target ===
         plusMenuOverlay
-
       ) {
 
         closePlusMenu();
@@ -1260,15 +1408,7 @@ if (galleryInput) {
       }
 
 
-      if (
-        !file.type.startsWith(
-          'image/'
-        )
-      ) {
-
-        alert(
-          'Please select an image file.'
-        );
+      if (!validateImage(file)) {
 
         galleryInput.value =
           '';
@@ -1320,15 +1460,7 @@ if (cameraInput) {
       }
 
 
-      if (
-        !file.type.startsWith(
-          'image/'
-        )
-      ) {
-
-        alert(
-          'Please capture/select an image.'
-        );
+      if (!validateImage(file)) {
 
         cameraInput.value =
           '';
