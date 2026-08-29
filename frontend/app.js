@@ -2,7 +2,8 @@
 // INFINITY AI — Frontend Logic
 // Main Brain: Infinity AI
 // Backend: Gemini + Groq Fallback
-// Image Vision: Gemini
+// Vision: Gemini
+// PDF: Frontend Ready
 // ===================================
 
 const API_URL =
@@ -58,6 +59,8 @@ let isWaitingForResponse = false;
 
 let selectedImage = null;
 
+let selectedPDF = null;
+
 
 // =========================================================
 // AI CAPABILITIES
@@ -102,12 +105,8 @@ function scrollToBottom() {
     return;
   }
 
-  requestAnimationFrame(() => {
-
-    chatContainer.scrollTop =
-      chatContainer.scrollHeight;
-
-  });
+  chatContainer.scrollTop =
+    chatContainer.scrollHeight;
 
 }
 
@@ -124,9 +123,7 @@ function removeWelcomeMessage() {
     );
 
   if (welcome) {
-
     welcome.remove();
-
   }
 
 }
@@ -187,7 +184,7 @@ function addMessageBubble(
 
 
   bubble.textContent =
-    text || '';
+    text;
 
 
   if (chatContainer) {
@@ -223,7 +220,7 @@ function replaceBubble(
 
 
   oldBubble.textContent =
-    text || '';
+    text;
 
 
   oldBubble.className =
@@ -335,19 +332,6 @@ function readFileAsDataURL(file) {
   return new Promise(
     (resolve, reject) => {
 
-      if (!file) {
-
-        reject(
-          new Error(
-            'No image selected.'
-          )
-        );
-
-        return;
-
-      }
-
-
       const reader =
         new FileReader();
 
@@ -367,7 +351,7 @@ function readFileAsDataURL(file) {
 
           reject(
             new Error(
-              'Could not read image.'
+              'Could not read file.'
             )
           );
 
@@ -385,6 +369,393 @@ function readFileAsDataURL(file) {
 
 
 // =========================================================
+// CREATE PDF INPUT DYNAMICALLY
+// No HTML change required
+// =========================================================
+
+let pdfInput = null;
+
+
+function createPDFInput() {
+
+  if (
+    document.getElementById(
+      'pdfInput'
+    )
+  ) {
+
+    pdfInput =
+      document.getElementById(
+        'pdfInput'
+      );
+
+    return;
+
+  }
+
+
+  pdfInput =
+    document.createElement(
+      'input'
+    );
+
+
+  pdfInput.type =
+    'file';
+
+
+  pdfInput.id =
+    'pdfInput';
+
+
+  pdfInput.accept =
+    'application/pdf,.pdf';
+
+
+  pdfInput.hidden =
+    true;
+
+
+  document.body.appendChild(
+    pdfInput
+  );
+
+
+  pdfInput.addEventListener(
+    'change',
+    handlePDFChange
+  );
+
+}
+
+
+// =========================================================
+// REMOVE PDF PREVIEW
+// =========================================================
+
+function removeExistingPDFPreview() {
+
+  const existing =
+    document.getElementById(
+      'selectedPDFPreview'
+    );
+
+
+  if (existing) {
+
+    existing.remove();
+
+  }
+
+}
+
+
+// =========================================================
+// REMOVE SELECTED PDF
+// =========================================================
+
+function removeSelectedPDF() {
+
+  selectedPDF =
+    null;
+
+
+  removeExistingPDFPreview();
+
+
+  if (pdfInput) {
+
+    pdfInput.value =
+      '';
+
+  }
+
+
+  if (messageInput) {
+
+    messageInput.focus();
+
+  }
+
+}
+
+
+// =========================================================
+// CREATE PDF PREVIEW
+// =========================================================
+
+function createPDFPreview(file) {
+
+  removeExistingPDFPreview();
+
+  removeExistingImagePreview();
+
+  selectedImage =
+    null;
+
+
+  if (!file) {
+    return;
+  }
+
+
+  selectedPDF = {
+
+    file: file,
+
+    dataURL: null
+
+  };
+
+
+  const reader =
+    new FileReader();
+
+
+  reader.onload =
+    function(event) {
+
+      if (!selectedPDF) {
+        return;
+      }
+
+
+      selectedPDF.dataURL =
+        event.target.result;
+
+
+      const preview =
+        document.createElement(
+          'div'
+        );
+
+
+      preview.id =
+        'selectedPDFPreview';
+
+
+      preview.className =
+        'selected-image-preview';
+
+
+      const sizeKB =
+        Math.max(
+          1,
+          Math.round(
+            file.size / 1024
+          )
+        );
+
+
+      preview.innerHTML = `
+
+        <div class="selected-image-inner">
+
+          <div
+            class="selected-image-thumb"
+            style="
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              font-size:32px;
+            "
+          >
+            📄
+          </div>
+
+
+          <div class="selected-image-info">
+
+            <strong>
+              📄 PDF Attached
+            </strong>
+
+            <small>
+              ${escapeHtml(file.name)}
+            </small>
+
+            <span>
+              ${sizeKB} KB • Ready for Infinity AI
+            </span>
+
+          </div>
+
+
+          <div class="selected-image-actions">
+
+            <button
+              id="changeSelectedPDF"
+              type="button"
+              aria-label="Change PDF"
+              title="Change PDF"
+            >
+              ↻
+            </button>
+
+
+            <button
+              id="removeSelectedPDF"
+              type="button"
+              aria-label="Remove PDF"
+              title="Remove PDF"
+            >
+              ×
+            </button>
+
+          </div>
+
+        </div>
+
+      `;
+
+
+      const inputArea =
+        document.querySelector(
+          '.input-area'
+        );
+
+
+      if (inputArea) {
+
+        inputArea.parentNode.insertBefore(
+          preview,
+          inputArea
+        );
+
+      }
+
+
+      const removeBtn =
+        document.getElementById(
+          'removeSelectedPDF'
+        );
+
+
+      if (removeBtn) {
+
+        removeBtn.addEventListener(
+          'click',
+          removeSelectedPDF
+        );
+
+      }
+
+
+      const changeBtn =
+        document.getElementById(
+          'changeSelectedPDF'
+        );
+
+
+      if (changeBtn) {
+
+        changeBtn.addEventListener(
+          'click',
+          () => {
+
+            if (pdfInput) {
+
+              pdfInput.click();
+
+            }
+
+          }
+        );
+
+      }
+
+
+      scrollToBottom();
+
+
+      if (messageInput) {
+
+        messageInput.focus();
+
+      }
+
+    };
+
+
+  reader.onerror =
+    function() {
+
+      alert(
+        '❌ PDF preview failed.'
+      );
+
+    };
+
+
+  reader.readAsDataURL(
+    file
+  );
+
+}
+
+
+// =========================================================
+// HANDLE PDF CHANGE
+// =========================================================
+
+function handlePDFChange() {
+
+  if (!pdfInput) {
+    return;
+  }
+
+
+  const file =
+    pdfInput.files?.[0];
+
+
+  if (!file) {
+    return;
+  }
+
+
+  const isPDF =
+    file.type ===
+      'application/pdf' ||
+    file.name
+      .toLowerCase()
+      .endsWith('.pdf');
+
+
+  if (!isPDF) {
+
+    alert(
+      'Please select a PDF file.'
+    );
+
+
+    pdfInput.value =
+      '';
+
+
+    return;
+
+  }
+
+
+  createPDFPreview(
+    file
+  );
+
+
+  closePlusMenu();
+
+
+  if (messageInput) {
+
+    messageInput.focus();
+
+  }
+
+}
+
+
+// =========================================================
 // CREATE FUTURISTIC IMAGE PREVIEW
 // =========================================================
 
@@ -395,25 +766,11 @@ function createImagePreview(
 
   removeExistingImagePreview();
 
+  removeSelectedPDF();
+
 
   if (!file) {
     return;
-  }
-
-
-  // Only allow images
-
-  if (
-    !file.type ||
-    !file.type.startsWith('image/')
-  ) {
-
-    alert(
-      'Please select an image file.'
-    );
-
-    return;
-
   }
 
 
@@ -444,22 +801,18 @@ function createImagePreview(
         event.target.result;
 
 
-      // ================================================
-      // PREVIEW CONTAINER
-      // ================================================
-
-      const previewArea =
+      const preview =
         document.createElement(
           'div'
         );
 
 
-      previewArea.id =
+      preview.id =
         'selectedImagePreview';
 
 
-      previewArea.className =
-        'image-attachment-area show';
+      preview.className =
+        'selected-image-preview';
 
 
       const sizeKB =
@@ -471,15 +824,11 @@ function createImagePreview(
         );
 
 
-      // ================================================
-      // PREVIEW HTML
-      // ================================================
+      preview.innerHTML = `
 
-      previewArea.innerHTML = `
+        <div class="selected-image-inner">
 
-        <div class="image-attachment-card">
-
-          <div class="image-attachment-preview">
+          <div class="selected-image-thumb">
 
             <img
               src="${event.target.result}"
@@ -489,29 +838,26 @@ function createImagePreview(
           </div>
 
 
-          <div class="image-attachment-info">
+          <div class="selected-image-info">
 
-            <div class="image-attachment-title">
+            <strong>
+              🖼️ Image Attached
+            </strong>
+
+            <small>
               ${escapeHtml(file.name)}
-            </div>
+            </small>
 
-
-            <div class="image-attachment-meta">
-              ${sizeKB} KB • ${escapeHtml(file.type || 'image')}
-            </div>
-
-
-            <div class="image-attachment-status">
-              Ready for Infinity AI
-            </div>
+            <span>
+              ${sizeKB} KB • Ready for Infinity AI
+            </span>
 
           </div>
 
 
-          <div class="image-attachment-actions">
+          <div class="selected-image-actions">
 
             <button
-              class="image-attachment-action"
               id="changeSelectedImage"
               type="button"
               aria-label="Change image"
@@ -522,7 +868,6 @@ function createImagePreview(
 
 
             <button
-              class="image-attachment-action image-attachment-remove"
               id="removeSelectedImage"
               type="button"
               aria-label="Remove image"
@@ -538,10 +883,6 @@ function createImagePreview(
       `;
 
 
-      // ================================================
-      // INSERT BEFORE INPUT AREA
-      // ================================================
-
       const inputArea =
         document.querySelector(
           '.input-area'
@@ -551,16 +892,12 @@ function createImagePreview(
       if (inputArea) {
 
         inputArea.parentNode.insertBefore(
-          previewArea,
+          preview,
           inputArea
         );
 
       }
 
-
-      // ================================================
-      // REMOVE IMAGE BUTTON
-      // ================================================
 
       const removeBtn =
         document.getElementById(
@@ -572,19 +909,11 @@ function createImagePreview(
 
         removeBtn.addEventListener(
           'click',
-          () => {
-
-            removeSelectedImage();
-
-          }
+          removeSelectedImage
         );
 
       }
 
-
-      // ================================================
-      // CHANGE IMAGE BUTTON
-      // ================================================
 
       const changeBtn =
         document.getElementById(
@@ -600,12 +929,11 @@ function createImagePreview(
 
             if (
               selectedImage &&
-              selectedImage.source === 'camera'
+              selectedImage.source ===
+              'camera'
             ) {
 
               if (cameraInput) {
-
-                cameraInput.value = '';
 
                 cameraInput.click();
 
@@ -616,8 +944,6 @@ function createImagePreview(
             else {
 
               if (galleryInput) {
-
-                galleryInput.value = '';
 
                 galleryInput.click();
 
@@ -634,8 +960,6 @@ function createImagePreview(
       scrollToBottom();
 
 
-      // Focus input
-
       if (messageInput) {
 
         messageInput.focus();
@@ -651,12 +975,6 @@ function createImagePreview(
       console.error(
         '❌ Image preview failed.'
       );
-
-
-      removeExistingImagePreview();
-
-      selectedImage =
-        null;
 
     };
 
@@ -728,57 +1046,11 @@ function removeSelectedImage() {
 
 
 // =========================================================
-// VALIDATE IMAGE
-// =========================================================
-
-function validateImage(file) {
-
-  if (!file) {
-
-    return false;
-
-  }
-
-
-  if (
-    !file.type ||
-    !file.type.startsWith('image/')
-  ) {
-
-    alert(
-      'Please select a valid image.'
-    );
-
-    return false;
-
-  }
-
-
-  // Optional safety limit:
-  // 10 MB
-
-  const maxSize =
-    10 * 1024 * 1024;
-
-
-  if (file.size > maxSize) {
-
-    alert(
-      'Image is too large. Please select an image under 10 MB.'
-    );
-
-    return false;
-
-  }
-
-
-  return true;
-
-}
-
-
-// =========================================================
 // SEND MESSAGE
+// Supports:
+// Text
+// Image + Text
+// PDF + Text
 // =========================================================
 
 async function sendMessage() {
@@ -792,19 +1064,16 @@ async function sendMessage() {
     messageInput.value.trim();
 
 
-  // Image OR text required
-
   if (
     !userMessage &&
-    !selectedImage
+    !selectedImage &&
+    !selectedPDF
   ) {
 
     return;
 
   }
 
-
-  // Prevent double requests
 
   if (isWaitingForResponse) {
 
@@ -813,12 +1082,12 @@ async function sendMessage() {
   }
 
 
-  // =======================================================
-  // SAVE CURRENT IMAGE
-  // =======================================================
-
   const imageToSend =
     selectedImage;
+
+
+  const pdfToSend =
+    selectedPDF;
 
 
   // =======================================================
@@ -840,11 +1109,14 @@ async function sendMessage() {
 
   }
 
-  else {
+  else if (pdfToSend) {
 
     addMessageBubble(
 
-      userMessage,
+      `📄 ${pdfToSend.file.name}\n\n${
+        userMessage ||
+        'Please analyze this PDF.'
+      }`,
 
       'user'
 
@@ -852,45 +1124,47 @@ async function sendMessage() {
 
   }
 
+  else {
+
+    addMessageBubble(
+      userMessage,
+      'user'
+    );
+
+  }
+
 
   // =======================================================
-  // CLEAR INPUT
+  // CLEAR TEXT INPUT
   // =======================================================
 
   messageInput.value =
     '';
+
+  messageInput.focus();
 
 
   // =======================================================
   // LOADING
   // =======================================================
 
+  const loadingText =
+    imageToSend
+      ? 'Infinity AI is analyzing the image... 👁️∞'
+      : pdfToSend
+        ? 'Infinity AI is reading the PDF... 📄∞'
+        : 'Infinity AI is thinking... 🤔∞';
+
+
   const loadingBubble =
     addMessageBubble(
-
-      imageToSend
-
-        ? 'Infinity AI is analyzing the image... 👁️∞'
-
-        : 'Infinity AI is thinking... 🤔∞',
-
+      loadingText,
       'loading'
-
     );
 
 
   isWaitingForResponse =
     true;
-
-
-  // Disable send button
-
-  if (sendBtn) {
-
-    sendBtn.disabled =
-      true;
-
-  }
 
 
   try {
@@ -937,6 +1211,46 @@ async function sendMessage() {
 
 
     // =====================================================
+    // PDF REQUEST
+    // =====================================================
+
+    else if (pdfToSend) {
+
+      let pdfData =
+        pdfToSend.dataURL;
+
+
+      if (!pdfData) {
+
+        pdfData =
+          await readFileAsDataURL(
+            pdfToSend.file
+          );
+
+      }
+
+
+      requestBody = {
+
+        message:
+          userMessage ||
+          'Please analyze this PDF.',
+
+        pdf:
+          pdfData,
+
+        pdfMimeType:
+          'application/pdf',
+
+        fileName:
+          pdfToSend.file.name
+
+      };
+
+    }
+
+
+    // =====================================================
     // TEXT REQUEST
     // =====================================================
 
@@ -950,14 +1264,6 @@ async function sendMessage() {
       };
 
     }
-
-
-    console.log(
-      '📤 Sending request to Infinity AI...',
-      imageToSend
-        ? 'Image + Text'
-        : 'Text'
-    );
 
 
     // =====================================================
@@ -1014,18 +1320,11 @@ async function sendMessage() {
 
         }
 
-        else if (errorData?.message) {
-
-          errorMessage =
-            errorData.message;
-
-        }
-
       }
 
       catch (_) {
 
-        // Ignore JSON parsing error
+        // Ignore JSON parse error
 
       }
 
@@ -1045,16 +1344,8 @@ async function sendMessage() {
       await response.json();
 
 
-    console.log(
-      '📥 Infinity AI response:',
-      data
-    );
-
-
     const aiReply =
       data?.reply ||
-      data?.response ||
-      data?.text ||
       'Infinity AI could not generate a response.';
 
 
@@ -1088,7 +1379,7 @@ async function sendMessage() {
       loadingBubble,
 
       `⚠️ Infinity AI could not process this request.\n\n${
-        error?.message ||
+        error.message ||
         'Please try again.'
       }`,
 
@@ -1105,18 +1396,9 @@ async function sendMessage() {
       false;
 
 
-    if (sendBtn) {
-
-      sendBtn.disabled =
-        false;
-
-    }
-
-
-    // Remove attachment
-    // only after request finishes
-
     removeSelectedImage();
+
+    removeSelectedPDF();
 
   }
 
@@ -1292,8 +1574,10 @@ if (plusMenuOverlay) {
     (event) => {
 
       if (
+
         event.target ===
         plusMenuOverlay
+
       ) {
 
         closePlusMenu();
@@ -1388,6 +1672,31 @@ function handleCamera() {
 
 
 // =========================================================
+// PDF
+// =========================================================
+
+function handlePDF() {
+
+  createPDFInput();
+
+
+  if (!pdfInput) {
+
+    alert(
+      'PDF input is not available.'
+    );
+
+    return;
+
+  }
+
+
+  pdfInput.click();
+
+}
+
+
+// =========================================================
 // GALLERY CHANGE
 // =========================================================
 
@@ -1408,7 +1717,15 @@ if (galleryInput) {
       }
 
 
-      if (!validateImage(file)) {
+      if (
+        !file.type.startsWith(
+          'image/'
+        )
+      ) {
+
+        alert(
+          'Please select an image file.'
+        );
 
         galleryInput.value =
           '';
@@ -1460,7 +1777,15 @@ if (cameraInput) {
       }
 
 
-      if (!validateImage(file)) {
+      if (
+        !file.type.startsWith(
+          'image/'
+        )
+      ) {
+
+        alert(
+          'Please capture/select an image.'
+        );
 
         cameraInput.value =
           '';
@@ -1552,6 +1877,23 @@ toolItems.forEach(
           closePlusMenu();
 
           handleGallery();
+
+          return;
+
+        }
+
+
+        // =================================================
+        // PDF
+        // =================================================
+
+        if (
+          action === 'pdf'
+        ) {
+
+          closePlusMenu();
+
+          handlePDF();
 
           return;
 
@@ -1686,6 +2028,9 @@ navItems.forEach(
 // INITIALIZATION
 // =========================================================
 
+createPDFInput();
+
+
 if (aiModel) {
 
   aiModel.value =
@@ -1741,6 +2086,10 @@ console.log(
 
 console.log(
   '📸 Camera: Ready'
+);
+
+console.log(
+  '📄 PDF Frontend: Ready'
 );
 
 console.log(
