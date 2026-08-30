@@ -266,15 +266,14 @@
         <div class="tool-grid">
 
           <button
-            class="tool-item coming-soon"
-            data-action="pdf"
-            type="button"
-          >
-            <span>📎</span>
-            <strong>PDF</strong>
-            <small>Available</small>
-          </button>
-
+  class="tool-item"
+  data-action="pdf"
+  type="button"
+>
+  <span>📎</span>
+  <strong>PDF</strong>
+  <small>Available</small>
+</button>
 
           <button
             class="tool-item coming-soon"
@@ -583,7 +582,12 @@
     capture="environment"
     hidden
   >
-
+<input
+  type="file"
+  id="pdfInput"
+  accept="application/pdf"
+  hidden
+>
 
   <script src="app.js"></script>
 
