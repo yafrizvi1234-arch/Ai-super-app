@@ -50,9 +50,6 @@ const galleryInput =
 const cameraInput =
   document.getElementById('cameraInput');
 
-const pdfInput =
-  document.getElementById('pdfInput');
-
 // =========================================================
 // STATE
 // =========================================================
