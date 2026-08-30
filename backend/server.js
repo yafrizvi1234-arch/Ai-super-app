@@ -5,17 +5,21 @@ const cors = require('cors');
 const { GoogleGenAI } = require('@google/genai');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+
+const PORT =
+  process.env.PORT || 3000;
+
 
 // =====================================================
 // INFINITY AI
 // Gemini = MAIN BRAIN
-// Groq = FALLBACK AI
-// Gemini Vision = IMAGE UNDERSTANDING
+// Groq = TEXT FALLBACK
+// Gemini = VISION
+// Gemini = PDF / DOCUMENT
 // =====================================================
 
 const GEMINI_MODEL =
-  process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+  process.env.GEMINI_MODEL || 'gemini-3.7-flash';
 
 const GROQ_MODEL =
   process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
@@ -27,11 +31,6 @@ const GROQ_MODEL =
 
 app.use(cors());
 
-/*
-  Image base64 data can be large.
-  25mb is only a server request limit.
-  Gemini's own supported limits still apply.
-*/
 app.use(
   express.json({
     limit: '25mb'
@@ -40,7 +39,7 @@ app.use(
 
 
 // =====================================================
-// GEMINI API KEY
+// GEMINI API
 // =====================================================
 
 const geminiApiKey =
@@ -62,7 +61,7 @@ const genAI =
 
 
 // =====================================================
-// GROQ API KEY
+// GROQ API
 // =====================================================
 
 const groqApiKey =
@@ -77,14 +76,14 @@ if (groqApiKey) {
 } else {
 
   console.log(
-    'ℹ️ GROQ_API_KEY not found. Groq fallback is disabled.'
+    'ℹ️ GROQ_API_KEY not found. Groq fallback disabled.'
   );
 
 }
 
 
 // =====================================================
-// GEMINI APP STATUS TOOL
+// APP STATUS TOOL
 // =====================================================
 
 const getAppStatusTool = {
@@ -125,6 +124,8 @@ function getAppStatus() {
 
     vision: 'active',
 
+    pdf: 'active',
+
     groqFallback:
       groqApiKey
         ? 'configured'
@@ -138,21 +139,31 @@ function getAppStatus() {
 
 
 // =====================================================
-// GEMINI BRAIN — TEXT
+// GEMINI TEXT BRAIN
 // =====================================================
 
-async function runGeminiBrain(userMessage) {
+async function runGeminiBrain(
+  userMessage
+) {
 
-  let input = userMessage;
+  let input =
+    userMessage;
 
-  let previousInteractionId = null;
+  let previousInteractionId =
+    null;
 
-  for (let round = 0; round < 3; round++) {
+
+  for (
+    let round = 0;
+    round < 3;
+    round++
+  ) {
 
     const interaction =
       await genAI.interactions.create({
 
-        model: GEMINI_MODEL,
+        model:
+          GEMINI_MODEL,
 
         input,
 
@@ -170,11 +181,13 @@ async function runGeminiBrain(userMessage) {
 
 
     for (
-      const step of interaction.steps || []
+      const step of
+      interaction.steps || []
     ) {
 
       if (
-        step.type === 'function_call'
+        step.type ===
+        'function_call'
       ) {
 
         console.log(
@@ -196,7 +209,10 @@ async function runGeminiBrain(userMessage) {
         } else {
 
           result = {
-            error: 'Unknown tool'
+
+            error:
+              'Unknown tool'
+
           };
 
         }
@@ -204,20 +220,26 @@ async function runGeminiBrain(userMessage) {
 
         functionResults.push({
 
-          type: 'function_result',
+          type:
+            'function_result',
 
-          name: step.name,
+          name:
+            step.name,
 
-          call_id: step.id,
+          call_id:
+            step.id,
 
           result: [
 
             {
 
-              type: 'text',
+              type:
+                'text',
 
               text:
-                JSON.stringify(result)
+                JSON.stringify(
+                  result
+                )
 
             }
 
@@ -235,8 +257,11 @@ async function runGeminiBrain(userMessage) {
     ) {
 
       return (
+
         interaction.output_text ||
+
         'Infinity AI could not generate a response.'
+
       );
 
     }
@@ -277,13 +302,6 @@ async function runGeminiVision(
 
   }
 
-
-  /*
-    Accept both:
-
-    1. Pure base64
-    2. data:image/jpeg;base64,XXXX
-  */
 
   let base64Image =
     String(imageData);
@@ -326,22 +344,18 @@ async function runGeminiVision(
   );
 
 
-  /*
-    Gemini Interactions API supports
-    multimodal input:
-    text + image.
-  */
-
   const interaction =
     await genAI.interactions.create({
 
-      model: GEMINI_MODEL,
+      model:
+        GEMINI_MODEL,
 
       input: [
 
         {
 
-          type: 'text',
+          type:
+            'text',
 
           text:
             `You are Infinity AI.
@@ -349,9 +363,6 @@ async function runGeminiVision(
 The user has provided an image.
 
 Analyze the image carefully and answer the user's question.
-
-User question:
-${userMessage}
 
 If the user asks about text in the image, read the visible text carefully.
 
@@ -361,13 +372,15 @@ If the user asks about a chart, diagram, screenshot, or document, explain what c
 
 Do not claim to see something that is not visible.
 
-Answer naturally and helpfully.`
+User question:
+${userMessage}`
 
         },
 
         {
 
-          type: 'image',
+          type:
+            'image',
 
           data:
             base64Image,
@@ -406,6 +419,149 @@ Answer naturally and helpfully.`
 
 
 // =====================================================
+// GEMINI PDF / DOCUMENT
+// PDF + TEXT
+// =====================================================
+
+async function runGeminiPDF(
+  userMessage,
+  pdfData,
+  mimeType
+) {
+
+  if (!pdfData) {
+
+    throw new Error(
+      'PDF data is missing.'
+    );
+
+  }
+
+
+  let base64PDF =
+    String(pdfData);
+
+
+  // Remove data URL prefix
+  //
+  // Example:
+  // data:application/pdf;base64,AAAA....
+  //
+
+  if (
+    base64PDF.includes(
+      'base64,'
+    )
+  ) {
+
+    base64PDF =
+      base64PDF.split(
+        'base64,'
+      )[1];
+
+  }
+
+
+  if (!base64PDF) {
+
+    throw new Error(
+      'Invalid PDF data.'
+    );
+
+  }
+
+
+  const safeMimeType =
+    mimeType ===
+      'application/pdf'
+
+      ? 'application/pdf'
+
+      : 'application/pdf';
+
+
+  console.log(
+    `📄 Gemini PDF: ${safeMimeType}`
+  );
+
+
+  const interaction =
+    await genAI.interactions.create({
+
+      model:
+        GEMINI_MODEL,
+
+      input: [
+
+        {
+
+          type:
+            'text',
+
+          text:
+            `You are Infinity AI.
+
+The user has provided a PDF document.
+
+Read and understand the PDF carefully.
+
+Answer the user's question using the PDF content whenever possible.
+
+If the user asks for a summary, summarize the important points.
+
+If the user asks about a specific section, page, table, topic, or question, answer using information from the PDF.
+
+If the PDF does not contain the requested information, clearly say that it was not found.
+
+Do not invent information that is not supported by the PDF.
+
+User question:
+${userMessage}`
+
+        },
+
+        {
+
+          type:
+            'document',
+
+          data:
+            base64PDF,
+
+          mime_type:
+            safeMimeType
+
+        }
+
+      ]
+
+    });
+
+
+  const reply =
+    interaction.output_text;
+
+
+  if (!reply) {
+
+    throw new Error(
+      'Gemini PDF returned an empty response.'
+    );
+
+  }
+
+
+  console.log(
+    '✅ Gemini PDF answered successfully.'
+  );
+
+
+  return reply;
+
+}
+
+
+// =====================================================
 // GROQ FALLBACK
 // TEXT ONLY
 // =====================================================
@@ -435,7 +591,8 @@ async function runGroqFallback(
 
       {
 
-        method: 'POST',
+        method:
+          'POST',
 
         headers: {
 
@@ -447,34 +604,37 @@ async function runGroqFallback(
 
         },
 
-        body: JSON.stringify({
+        body:
+          JSON.stringify({
 
-          model:
-            GROQ_MODEL,
+            model:
+              GROQ_MODEL,
 
-          messages: [
+            messages: [
 
-            {
+              {
 
-              role: 'system',
+                role:
+                  'system',
 
-              content:
-                'You are Infinity AI, a helpful and accurate AI assistant. Give clear answers.'
+                content:
+                  'You are Infinity AI, a helpful and accurate AI assistant. Give clear and useful answers.'
 
-            },
+              },
 
-            {
+              {
 
-              role: 'user',
+                role:
+                  'user',
 
-              content:
-                userMessage
+                content:
+                  userMessage
 
-            }
+              }
 
-          ]
+            ]
 
-        })
+          })
 
       }
 
@@ -516,7 +676,7 @@ async function runGroqFallback(
 
 
 // =====================================================
-// SMART TEXT ROUTER
+// TEXT ROUTER
 // =====================================================
 
 async function getAIReply(
@@ -545,11 +705,14 @@ async function getAIReply(
 
       reply,
 
-      provider: 'gemini',
+      provider:
+        'gemini',
 
-      brain: 'gemini',
+      brain:
+        'gemini',
 
-      fallbackUsed: false
+      fallbackUsed:
+        false
 
     };
 
@@ -583,11 +746,14 @@ async function getAIReply(
 
           reply,
 
-          provider: 'groq',
+          provider:
+            'groq',
 
-          brain: 'gemini',
+          brain:
+            'gemini',
 
-          fallbackUsed: true
+          fallbackUsed:
+            true
 
         };
 
@@ -616,7 +782,7 @@ async function getAIReply(
 
 
 // =====================================================
-// SMART VISION ROUTER
+// VISION ROUTER
 // =====================================================
 
 async function getVisionReply(
@@ -624,11 +790,6 @@ async function getVisionReply(
   imageData,
   mimeType
 ) {
-
-  /*
-    Vision request:
-    Gemini Vision first.
-  */
 
   try {
 
@@ -653,37 +814,106 @@ async function getVisionReply(
 
       reply,
 
-      provider: 'gemini',
+      provider:
+        'gemini',
 
-      brain: 'gemini',
+      brain:
+        'gemini',
 
-      vision: true,
+      vision:
+        true,
 
-      fallbackUsed: false
+      fallbackUsed:
+        false
 
     };
 
   }
 
-  catch (geminiError) {
+  catch (error) {
 
     console.error(
       '❌ Gemini Vision failed:',
-      geminiError.message ||
-      geminiError
+      error.message ||
+      error
     );
 
 
-    /*
-      Important:
-
-      Groq fallback here is intentionally NOT
-      used for image understanding because your
-      current Groq fallback is text-only.
-    */
-
     throw new Error(
       'Gemini Vision failed. Image could not be analyzed.'
+    );
+
+  }
+
+}
+
+
+// =====================================================
+// PDF ROUTER
+// =====================================================
+
+async function getPDFReply(
+  userMessage,
+  pdfData,
+  mimeType,
+  fileName
+) {
+
+  try {
+
+    console.log(
+      `📄 Trying Gemini PDF: ${
+        fileName || 'unknown.pdf'
+      }`
+    );
+
+
+    const reply =
+      await runGeminiPDF(
+
+        userMessage,
+
+        pdfData,
+
+        mimeType
+
+      );
+
+
+    return {
+
+      reply,
+
+      provider:
+        'gemini',
+
+      brain:
+        'gemini',
+
+      document:
+        true,
+
+      fileName:
+        fileName || null,
+
+      fallbackUsed:
+        false
+
+    };
+
+  }
+
+  catch (error) {
+
+    console.error(
+      '❌ Gemini PDF failed:',
+      error.message ||
+      error
+    );
+
+
+    throw new Error(
+      'Gemini PDF failed. The PDF could not be analyzed.'
     );
 
   }
@@ -701,17 +931,25 @@ app.get(
 
     res.json({
 
-      status: 'ok',
+      status:
+        'ok',
 
-      router: 'active',
+      router:
+        'active',
 
-      mainBrain: 'gemini',
+      mainBrain:
+        'gemini',
 
-      vision: 'active',
+      vision:
+        'active',
+
+      pdf:
+        'active',
 
       providers: {
 
-        gemini: 'active',
+        gemini:
+          'active',
 
         groq:
           groqApiKey
@@ -742,8 +980,9 @@ app.get(
 // =====================================================
 // CHAT API
 // Supports:
-// 1. Text only
-// 2. Image + text
+// 1. Text
+// 2. Image + Text
+// 3. PDF + Text
 // =====================================================
 
 app.post(
@@ -753,10 +992,70 @@ app.post(
     try {
 
       const {
+
         message,
+
         image,
-        imageMimeType
+
+        imageMimeType,
+
+        pdf,
+
+        pdfMimeType,
+
+        fileName
+
       } = req.body;
+
+
+      // =================================================
+      // PDF REQUEST
+      // =================================================
+
+      if (pdf) {
+
+        if (
+          !message ||
+          typeof message !== 'string'
+        ) {
+
+          return res.status(400).json({
+
+            error:
+              'Please provide a question/message with the PDF.'
+
+          });
+
+        }
+
+
+        console.log(
+          `📄 PDF request: ${
+            fileName || 'unknown.pdf'
+          }`
+        );
+
+
+        const result =
+          await getPDFReply(
+
+            message.trim(),
+
+            pdf,
+
+            pdfMimeType ||
+              'application/pdf',
+
+            fileName
+
+          );
+
+
+        return res.json(
+          result
+        );
+
+      }
 
 
       // =================================================
@@ -805,7 +1104,7 @@ app.post(
 
 
       // =================================================
-      // NORMAL TEXT REQUEST
+      // TEXT REQUEST
       // =================================================
 
       if (
@@ -853,6 +1152,7 @@ app.post(
       return res.status(500).json({
 
         error:
+          error.message ||
           'Infinity AI could not process the request. Please try again.'
 
       });
@@ -923,6 +1223,10 @@ app.listen(
 
     console.log(
       `👁️ Vision: Gemini Vision (${GEMINI_MODEL})`
+    );
+
+    console.log(
+      `📄 PDF: Gemini Document (${GEMINI_MODEL})`
     );
 
     console.log(
