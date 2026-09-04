@@ -2417,3 +2417,42 @@ body {
     font-size: 16px;
   }
 }
+/* =========================================
+   PLUS BUTTON CLICK FIX
+   ========================================= */
+
+.input-area {
+  position: relative;
+  z-index: 1000;
+}
+
+.plus-btn {
+  position: relative !important;
+  z-index: 1002 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+#plusBtn {
+  position: relative !important;
+  z-index: 1003 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation;
+}
+
+.plus-menu-overlay {
+  position: fixed !important;
+  z-index: 9999 !important;
+  pointer-events: none;
+}
+
+.plus-menu-overlay.show {
+  pointer-events: auto !important;
+}
+
+.plus-menu {
+  position: relative;
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+}
