@@ -377,20 +377,33 @@ let pdfInput = null;
 
 function createPDFInput() {
 
-  if (
-    document.getElementById(
-      'pdfInput'
-    )
-  ) {
+  pdfInput =
+    document.getElementById('pdfInput');
+
+  if (!pdfInput) {
 
     pdfInput =
-      document.getElementById(
-        'pdfInput'
-      );
+      document.createElement('input');
 
-    return;
+    pdfInput.type = 'file';
+    pdfInput.id = 'pdfInput';
+    pdfInput.accept = 'application/pdf,.pdf';
+    pdfInput.hidden = true;
 
+    document.body.appendChild(pdfInput);
   }
+
+  // Prevent duplicate listener
+  pdfInput.removeEventListener(
+    'change',
+    handlePDFChange
+  );
+
+  pdfInput.addEventListener(
+    'change',
+    handlePDFChange
+  );
+}
 
 
   pdfInput =
