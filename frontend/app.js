@@ -406,41 +406,6 @@ function createPDFInput() {
 }
 
 
-  pdfInput =
-    document.createElement(
-      'input'
-    );
-
-
-  pdfInput.type =
-    'file';
-
-
-  pdfInput.id =
-    'pdfInput';
-
-
-  pdfInput.accept =
-    'application/pdf,.pdf';
-
-
-  pdfInput.hidden =
-    true;
-
-
-  document.body.appendChild(
-    pdfInput
-  );
-
-
-  pdfInput.addEventListener(
-    'change',
-    handlePDFChange
-  );
-
-}
-
-
 // =========================================================
 // REMOVE PDF PREVIEW
 // =========================================================
