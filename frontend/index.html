@@ -53,6 +53,35 @@
 
 
   <!-- ==============================
+       CHAT HISTORY BAR
+       ============================== -->
+
+  <section class="history-bar">
+
+    <button
+      id="historyBtn"
+      class="history-btn"
+      type="button"
+      aria-label="Open chat history"
+    >
+      <span>☰</span>
+      <strong>Chats</strong>
+    </button>
+
+    <button
+      id="newChatBtn"
+      class="new-chat-btn"
+      type="button"
+      aria-label="Start new chat"
+    >
+      <span>＋</span>
+      <strong>New Chat</strong>
+    </button>
+
+  </section>
+
+
+  <!-- ==============================
        AI CAPABILITIES
        ============================== -->
 
@@ -212,7 +241,9 @@
       </div>
 
 
-      <!-- IMAGE -->
+      <!-- ============================
+           IMAGE
+           ============================ -->
 
       <section class="tool-section">
 
@@ -257,7 +288,9 @@
       </section>
 
 
-      <!-- FILES -->
+      <!-- ============================
+           FILES
+           ============================ -->
 
       <section class="tool-section">
 
@@ -266,14 +299,15 @@
         <div class="tool-grid">
 
           <button
-  class="tool-item"
-  data-action="pdf"
-  type="button"
->
-  <span>📎</span>
-  <strong>PDF</strong>
-  <small>Available</small>
-</button>
+            class="tool-item"
+            data-action="pdf"
+            type="button"
+          >
+            <span>📎</span>
+            <strong>PDF</strong>
+            <small>Available</small>
+          </button>
+
 
           <button
             class="tool-item coming-soon"
@@ -312,7 +346,9 @@
       </section>
 
 
-      <!-- CREATE -->
+      <!-- ============================
+           CREATE
+           ============================ -->
 
       <section class="tool-section">
 
@@ -368,7 +404,9 @@
       </section>
 
 
-      <!-- AI TOOLS -->
+      <!-- ============================
+           AI TOOLS
+           ============================ -->
 
       <section class="tool-section">
 
@@ -435,7 +473,9 @@
       </section>
 
 
-      <!-- FUTURE -->
+      <!-- ============================
+           FUTURE
+           ============================ -->
 
       <section class="tool-section">
 
@@ -502,6 +542,150 @@
       </section>
 
     </div>
+
+  </div>
+
+
+  <!-- ==============================
+       CHAT HISTORY DRAWER
+       ============================== -->
+
+  <div
+    id="historyOverlay"
+    class="history-overlay"
+    aria-hidden="true"
+  >
+
+    <aside
+      id="historyPanel"
+      class="history-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Chat history"
+    >
+
+      <!-- HISTORY HEADER -->
+
+      <div class="history-panel-header">
+
+        <div>
+
+          <h2>
+            💬 Chat History
+          </h2>
+
+          <p>
+            Your conversations
+          </p>
+
+        </div>
+
+        <button
+          id="closeHistoryBtn"
+          class="close-history-btn"
+          type="button"
+          aria-label="Close chat history"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <!-- NEW CHAT -->
+
+      <button
+        id="historyNewChatBtn"
+        class="history-new-chat"
+        type="button"
+      >
+
+        <span>
+          ＋
+        </span>
+
+        <div>
+
+          <strong>
+            New Chat
+          </strong>
+
+          <small>
+            Start a fresh conversation
+          </small>
+
+        </div>
+
+      </button>
+
+
+      <!-- SEARCH -->
+
+      <div class="history-search">
+
+        <span>
+          🔍
+        </span>
+
+        <input
+          type="search"
+          id="historySearchInput"
+          placeholder="Search conversations..."
+          autocomplete="off"
+        >
+
+      </div>
+
+
+      <!-- CONVERSATION LIST -->
+
+      <div
+        id="conversationList"
+        class="conversation-list"
+      >
+
+        <!--
+          JavaScript will insert
+          conversation items here.
+        -->
+
+        <div
+          id="emptyHistory"
+          class="empty-history"
+        >
+
+          <div>
+            💬
+          </div>
+
+          <strong>
+            No conversations yet
+          </strong>
+
+          <small>
+            Your chats will appear here automatically.
+          </small>
+
+        </div>
+
+      </div>
+
+
+      <!-- HISTORY FOOTER -->
+
+      <div class="history-panel-footer">
+
+        <button
+          id="clearAllHistoryBtn"
+          class="clear-history-btn"
+          type="button"
+        >
+          🗑️ Clear All Chats
+        </button>
+
+      </div>
+
+    </aside>
 
   </div>
 
@@ -575,6 +759,7 @@
     hidden
   >
 
+
   <input
     type="file"
     id="cameraInput"
@@ -582,12 +767,19 @@
     capture="environment"
     hidden
   >
-<input
-  type="file"
-  id="pdfInput"
-  accept="application/pdf"
-  hidden
->
+
+
+  <input
+    type="file"
+    id="pdfInput"
+    accept="application/pdf,.pdf"
+    hidden
+  >
+
+
+  <!-- ==============================
+       JAVASCRIPT
+       ============================== -->
 
   <script src="app.js"></script>
 
