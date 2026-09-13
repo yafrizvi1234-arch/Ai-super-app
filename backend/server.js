@@ -3,16 +3,21 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { GoogleGenAI } = require('@google/genai');
+const OpenAI = require('openai');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+
 // =====================================================
 // INFINITY AI
-// Gemini = MAIN BRAIN
-// Groq = FALLBACK AI
+//
+// Gemini  = MAIN BRAIN
+// Groq    = FALLBACK 1
+// OpenAI  = FALLBACK 2
+//
 // Gemini Vision = IMAGE UNDERSTANDING
-// Gemini PDF = DOCUMENT UNDERSTANDING
+// Gemini PDF    = DOCUMENT UNDERSTANDING
 // =====================================================
 
 const GEMINI_MODEL =
@@ -21,6 +26,9 @@ const GEMINI_MODEL =
 const GROQ_MODEL =
   process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
 
+const OPENAI_MODEL =
+  process.env.OPENAI_MODEL || 'gpt-5.6-luna';
+
 
 // =====================================================
 // MIDDLEWARE
@@ -28,11 +36,6 @@ const GROQ_MODEL =
 
 app.use(cors());
 
-/*
-  Image/PDF base64 data can be large.
-  50mb server request limit gives PDF room.
-  Gemini PDF support has its own limits.
-*/
 app.use(
   express.json({
     limit: '50mb'
@@ -41,7 +44,7 @@ app.use(
 
 
 // =====================================================
-// GEMINI API KEY
+// GEMINI
 // =====================================================
 
 const geminiApiKey =
@@ -63,7 +66,7 @@ const genAI =
 
 
 // =====================================================
-// GROQ API KEY
+// GROQ
 // =====================================================
 
 const groqApiKey =
@@ -79,6 +82,35 @@ if (groqApiKey) {
 
   console.log(
     'ℹ️ GROQ_API_KEY not found. Groq fallback is disabled.'
+  );
+
+}
+
+
+// =====================================================
+// OPENAI
+// =====================================================
+
+const openaiApiKey =
+  process.env.OPENAI_API_KEY;
+
+let openai = null;
+
+if (openaiApiKey) {
+
+  openai =
+    new OpenAI({
+      apiKey: openaiApiKey
+    });
+
+  console.log(
+    `✅ OpenAI is configured. Model: ${OPENAI_MODEL}`
+  );
+
+} else {
+
+  console.log(
+    'ℹ️ OPENAI_API_KEY not found. OpenAI is disabled.'
   );
 
 }
@@ -133,6 +165,11 @@ function getAppStatus() {
         ? 'configured'
         : 'disabled',
 
+    openaiFallback:
+      openai
+        ? 'configured'
+        : 'disabled',
+
     testTool: 'working'
 
   };
@@ -141,7 +178,7 @@ function getAppStatus() {
 
 
 // =====================================================
-// GEMINI BRAIN — TEXT
+// GEMINI BRAIN
 // =====================================================
 
 async function runGeminiBrain(userMessage) {
@@ -263,7 +300,6 @@ async function runGeminiBrain(userMessage) {
 
 // =====================================================
 // GEMINI VISION
-// IMAGE + TEXT
 // =====================================================
 
 async function runGeminiVision(
@@ -281,27 +317,16 @@ async function runGeminiVision(
   }
 
 
-  /*
-    Accept both:
-
-    1. Pure base64
-    2. data:image/jpeg;base64,XXXX
-  */
-
   let base64Image =
     String(imageData);
 
 
   if (
-    base64Image.includes(
-      'base64,'
-    )
+    base64Image.includes('base64,')
   ) {
 
     base64Image =
-      base64Image.split(
-        'base64,'
-      )[1];
+      base64Image.split('base64,')[1];
 
   }
 
@@ -328,11 +353,6 @@ async function runGeminiVision(
     `🖼️ Gemini Vision: ${safeMimeType}`
   );
 
-
-  /*
-    Gemini Interactions API:
-    text + image
-  */
 
   const interaction =
     await genAI.interactions.create({
@@ -409,7 +429,6 @@ Answer naturally and helpfully.`
 
 // =====================================================
 // GEMINI PDF
-// PDF + TEXT
 // =====================================================
 
 async function runGeminiPDF(
@@ -428,27 +447,16 @@ async function runGeminiPDF(
   }
 
 
-  /*
-    Accept both:
-
-    1. Pure base64
-    2. data:application/pdf;base64,XXXX
-  */
-
   let base64PDF =
     String(pdfData);
 
 
   if (
-    base64PDF.includes(
-      'base64,'
-    )
+    base64PDF.includes('base64,')
   ) {
 
     base64PDF =
-      base64PDF.split(
-        'base64,'
-      )[1];
+      base64PDF.split('base64,')[1];
 
   }
 
@@ -475,13 +483,6 @@ async function runGeminiPDF(
     `📄 Gemini PDF: ${fileName || 'document.pdf'}`
   );
 
-
-  /*
-    Gemini Interactions API supports
-    PDF as a document input.
-
-    The PDF is sent as base64 document data.
-  */
 
   const interaction =
     await genAI.interactions.create({
@@ -570,8 +571,7 @@ Answer naturally and helpfully.`
 
 
 // =====================================================
-// GROQ FALLBACK
-// TEXT ONLY
+// GROQ
 // =====================================================
 
 async function runGroqFallback(
@@ -680,12 +680,125 @@ async function runGroqFallback(
 
 
 // =====================================================
+// OPENAI
+// =====================================================
+
+async function runOpenAI(
+  userMessage
+) {
+
+  if (!openai) {
+
+    throw new Error(
+      'OPENAI_API_KEY is not configured.'
+    );
+
+  }
+
+
+  console.log(
+    `🤖 Trying OpenAI: ${OPENAI_MODEL}`
+  );
+
+
+  const response =
+    await openai.responses.create({
+
+      model: OPENAI_MODEL,
+
+      input: [
+
+        {
+
+          role: 'system',
+
+          content:
+            'You are Infinity AI, a helpful, accurate and clear AI assistant. Answer naturally and directly.'
+
+        },
+
+        {
+
+          role: 'user',
+
+          content:
+            userMessage
+
+        }
+
+      ]
+
+    });
+
+
+  const reply =
+    response.output_text;
+
+
+  if (!reply) {
+
+    throw new Error(
+      'OpenAI returned an empty response.'
+    );
+
+  }
+
+
+  console.log(
+    '✅ OpenAI answered successfully.'
+  );
+
+
+  return reply;
+
+}
+
+
+// =====================================================
+// OPENAI DIRECT MODE
+// User selects ChatGPT / OpenAI capability
+// =====================================================
+
+async function getOpenAIDirectReply(
+  userMessage
+) {
+
+  const reply =
+    await runOpenAI(
+      userMessage
+    );
+
+
+  return {
+
+    reply,
+
+    provider: 'openai',
+
+    brain: 'openai',
+
+    fallbackUsed: false,
+
+    directSelection: true
+
+  };
+
+}
+
+
+// =====================================================
 // SMART TEXT ROUTER
+//
+// Gemini → Groq → OpenAI
 // =====================================================
 
 async function getAIReply(
   userMessage
 ) {
+
+  // ---------------------------------------------------
+  // GEMINI
+  // ---------------------------------------------------
 
   try {
 
@@ -727,54 +840,108 @@ async function getAIReply(
       geminiError
     );
 
-
-    if (groqApiKey) {
-
-      try {
-
-        const reply =
-          await runGroqFallback(
-            userMessage
-          );
+  }
 
 
-        console.log(
-          '✅ Groq fallback answered successfully.'
+  // ---------------------------------------------------
+  // GROQ
+  // ---------------------------------------------------
+
+  if (groqApiKey) {
+
+    try {
+
+      const reply =
+        await runGroqFallback(
+          userMessage
         );
 
 
-        return {
+      console.log(
+        '✅ Groq fallback answered successfully.'
+      );
 
-          reply,
 
-          provider: 'groq',
+      return {
 
-          brain: 'gemini',
+        reply,
 
-          fallbackUsed: true
+        provider: 'groq',
 
-        };
+        brain: 'gemini',
 
-      }
+        fallbackUsed: true,
 
-      catch (groqError) {
+        fallbackLevel: 1
 
-        console.error(
-          '❌ Groq fallback failed:',
-          groqError.message ||
-          groqError
-        );
-
-      }
+      };
 
     }
 
+    catch (groqError) {
 
-    throw new Error(
-      'Both Gemini and Groq failed.'
-    );
+      console.error(
+        '❌ Groq fallback failed:',
+        groqError.message ||
+        groqError
+      );
+
+    }
 
   }
+
+
+  // ---------------------------------------------------
+  // OPENAI
+  // ---------------------------------------------------
+
+  if (openai) {
+
+    try {
+
+      const reply =
+        await runOpenAI(
+          userMessage
+        );
+
+
+      console.log(
+        '✅ OpenAI fallback answered successfully.'
+      );
+
+
+      return {
+
+        reply,
+
+        provider: 'openai',
+
+        brain: 'gemini',
+
+        fallbackUsed: true,
+
+        fallbackLevel: 2
+
+      };
+
+    }
+
+    catch (openaiError) {
+
+      console.error(
+        '❌ OpenAI fallback failed:',
+        openaiError.message ||
+        openaiError
+      );
+
+    }
+
+  }
+
+
+  throw new Error(
+    'Gemini, Groq and OpenAI all failed.'
+  );
 
 }
 
@@ -788,11 +955,6 @@ async function getVisionReply(
   imageData,
   mimeType
 ) {
-
-  /*
-    Vision request:
-    Gemini Vision first.
-  */
 
   try {
 
@@ -838,12 +1000,6 @@ async function getVisionReply(
     );
 
 
-    /*
-      Groq fallback is intentionally NOT
-      used for image understanding because
-      current Groq fallback is text-only.
-    */
-
     throw new Error(
       'Gemini Vision failed. Image could not be analyzed.'
     );
@@ -863,14 +1019,6 @@ async function getPDFReply(
   mimeType,
   fileName
 ) {
-
-  /*
-    PDF request:
-    Gemini PDF first.
-
-    Groq fallback is NOT used because
-    current Groq fallback is text-only.
-  */
 
   try {
 
@@ -957,6 +1105,11 @@ app.get(
         groq:
           groqApiKey
             ? 'configured'
+            : 'not-configured',
+
+        openai:
+          openai
+            ? 'configured'
             : 'not-configured'
 
       },
@@ -967,7 +1120,10 @@ app.get(
           GEMINI_MODEL,
 
         groq:
-          GROQ_MODEL
+          GROQ_MODEL,
+
+        openai:
+          OPENAI_MODEL
 
       },
 
@@ -982,10 +1138,17 @@ app.get(
 
 // =====================================================
 // CHAT API
+//
 // Supports:
-// 1. Text only
+//
+// 1. Text
 // 2. Image + text
 // 3. PDF + text
+// 4. OpenAI direct capability
+//
+// Optional frontend field:
+//
+// capability: "chatgpt"
 // =====================================================
 
 app.post(
@@ -1006,13 +1169,15 @@ app.post(
 
         pdfMimeType,
 
-        fileName
+        fileName,
+
+        capability
 
       } = req.body;
 
 
       // =================================================
-      // PDF REQUEST
+      // PDF
       // =================================================
 
       if (pdf) {
@@ -1059,7 +1224,7 @@ app.post(
 
 
       // =================================================
-      // IMAGE REQUEST
+      // IMAGE
       // =================================================
 
       if (image) {
@@ -1104,7 +1269,7 @@ app.post(
 
 
       // =================================================
-      // NORMAL TEXT REQUEST
+      // MESSAGE VALIDATION
       // =================================================
 
       if (
@@ -1123,14 +1288,54 @@ app.post(
       }
 
 
+      const cleanMessage =
+        message.trim();
+
+
       console.log(
-        `💬 User: ${message.trim()}`
+        `💬 User: ${cleanMessage}`
       );
 
 
+      // =================================================
+      // DIRECT OPENAI / CHATGPT MODE
+      // =================================================
+
+      if (
+        typeof capability === 'string' &&
+        (
+          capability.toLowerCase() === 'chatgpt' ||
+          capability.toLowerCase() === 'openai'
+        )
+      ) {
+
+        console.log(
+          '🤖 ChatGPT/OpenAI capability selected.'
+        );
+
+
+        const result =
+          await getOpenAIDirectReply(
+            cleanMessage
+          );
+
+
+        return res.json(
+          result
+        );
+
+      }
+
+
+      // =================================================
+      // NORMAL AUTO ROUTER
+      //
+      // Gemini → Groq → OpenAI
+      // =================================================
+
       const result =
         await getAIReply(
-          message.trim()
+          cleanMessage
         );
 
 
@@ -1230,7 +1435,11 @@ app.listen(
     );
 
     console.log(
-      `🔥 Fallback: Groq (${GROQ_MODEL})`
+      `🔥 Fallback 1: Groq (${GROQ_MODEL})`
+    );
+
+    console.log(
+      `🤖 Fallback 2: OpenAI (${OPENAI_MODEL})`
     );
 
   }
