@@ -1,44 +1,73 @@
 // ==========================================
 // INFINITY AI - APP.JS
 // Chat + History + Image + PDF
+// Gemini + ChatGPT + Groq Routing
 // Typing Animation + Markdown + Code Blocks
 // ==========================================
 
-const API_URL = 'https://ai-super-app-3fr7.onrender.com/api/chat';
+const API_URL =
+    'https://ai-super-app-3fr7.onrender.com/api/chat';
 
 
 // ==========================================
 // DOM ELEMENTS
 // ==========================================
 
-const chatContainer = document.getElementById('chatContainer');
-const messageInput = document.getElementById('messageInput');
-const sendBtn = document.getElementById('sendBtn');
+const chatContainer =
+    document.getElementById('chatContainer');
 
-const navItems = document.querySelectorAll('.nav-item');
+const messageInput =
+    document.getElementById('messageInput');
 
-const aiModel = document.getElementById('aiModel');
-const modelStatus = document.getElementById('modelStatus');
+const sendBtn =
+    document.getElementById('sendBtn');
 
-const plusBtn = document.getElementById('plusBtn');
-const plusMenuOverlay = document.getElementById('plusMenuOverlay');
-const closePlusBtn = document.getElementById('closePlusBtn');
-const toolItems = document.querySelectorAll('.tool-item');
+const navItems =
+    document.querySelectorAll('.nav-item');
 
-const galleryInput = document.getElementById('galleryInput');
-const cameraInput = document.getElementById('cameraInput');
+const aiModel =
+    document.getElementById('aiModel');
+
+const modelStatus =
+    document.getElementById('modelStatus');
+
+const plusBtn =
+    document.getElementById('plusBtn');
+
+const plusMenuOverlay =
+    document.getElementById('plusMenuOverlay');
+
+const closePlusBtn =
+    document.getElementById('closePlusBtn');
+
+const toolItems =
+    document.querySelectorAll('.tool-item');
+
+const galleryInput =
+    document.getElementById('galleryInput');
+
+const cameraInput =
+    document.getElementById('cameraInput');
 
 
 // ==========================================
 // HISTORY ELEMENTS
 // ==========================================
 
-const historyBtn = document.getElementById('historyBtn');
-const newChatBtn = document.getElementById('newChatBtn');
+const historyBtn =
+    document.getElementById('historyBtn');
 
-const historyOverlay = document.getElementById('historyOverlay');
-const historyPanel = document.getElementById('historyPanel');
-const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+const newChatBtn =
+    document.getElementById('newChatBtn');
+
+const historyOverlay =
+    document.getElementById('historyOverlay');
+
+const historyPanel =
+    document.getElementById('historyPanel');
+
+const closeHistoryBtn =
+    document.getElementById('closeHistoryBtn');
 
 const historyNewChatBtn =
     document.getElementById('historyNewChatBtn');
@@ -60,6 +89,7 @@ const clearAllHistoryBtn =
 let isWaitingForResponse = false;
 
 let selectedImage = null;
+
 let selectedPDF = null;
 
 let pdfInput = null;
@@ -76,6 +106,7 @@ const CURRENT_CHAT_STORAGE_KEY =
     'infinity_ai_current_chat_v1';
 
 let conversations = [];
+
 let currentConversationId = null;
 
 
@@ -87,32 +118,50 @@ const AI_CAPABILITIES = {
 
     gemini: {
         name: 'Infinity AI Core',
-        status: 'Infinity AI Core Online ✓'
+        status: 'Infinity AI Core Online ✓',
+        provider: 'Gemini'
+    },
+
+    chatgpt: {
+        name: 'ChatGPT',
+        status: 'ChatGPT Online ✓',
+        provider: 'OpenAI'
+    },
+
+    groq: {
+        name: 'Groq',
+        status: 'Groq Online ✓',
+        provider: 'Groq'
     },
 
     deep: {
         name: 'Deep Reasoning',
-        status: 'Deep Reasoning Online ✓'
+        status: 'Deep Reasoning Online ✓',
+        provider: 'Gemini'
     },
 
     advanced: {
         name: 'Advanced Assistant',
-        status: 'Advanced Assistant Online ✓'
+        status: 'Advanced Assistant Online ✓',
+        provider: 'Gemini'
     },
 
     creative: {
         name: 'Creative Intelligence',
-        status: 'Creative Intelligence Online ✓'
+        status: 'Creative Intelligence Online ✓',
+        provider: 'Gemini'
     },
 
     long: {
         name: 'Long Context AI',
-        status: 'Long Context AI Online ✓'
+        status: 'Long Context AI Online ✓',
+        provider: 'Gemini'
     },
 
     web: {
         name: 'Web Intelligence',
-        status: 'Web Intelligence Online ✓'
+        status: 'Web Intelligence Online ✓',
+        provider: 'Gemini'
     }
 };
 
@@ -162,12 +211,43 @@ function escapeHtml(text) {
 
 
 // ==========================================
+// DATA URL -> BASE64
+// ==========================================
+
+function stripDataUrlPrefix(value) {
+
+    if (!value) {
+        return value;
+    }
+
+    const stringValue =
+        String(value);
+
+    const commaIndex =
+        stringValue.indexOf(',');
+
+    if (
+        stringValue.startsWith('data:') &&
+        commaIndex !== -1
+    ) {
+
+        return stringValue.substring(
+            commaIndex + 1
+        );
+    }
+
+    return stringValue;
+}
+
+
+// ==========================================
 // MARKDOWN PARSER
 // ==========================================
 
 function inlineMarkdown(text) {
 
-    let safe = escapeHtml(text);
+    let safe =
+        escapeHtml(text);
 
 
     // Inline code
@@ -224,20 +304,26 @@ function markdownToHtml(markdown) {
     }
 
 
-    const text = String(markdown)
-        .replace(/\r\n/g, '\n')
-        .replace(/\r/g, '\n');
+    const text =
+        String(markdown)
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n');
 
 
-    const lines = text.split('\n');
+    const lines =
+        text.split('\n');
+
 
     let html = '';
 
     let inCodeBlock = false;
+
     let codeLanguage = '';
+
     let codeLines = [];
 
     let inUnorderedList = false;
+
     let inOrderedList = false;
 
 
@@ -265,6 +351,7 @@ function markdownToHtml(markdown) {
         const code =
             codeLines.join('\n');
 
+
         const safeCode =
             escapeHtml(code);
 
@@ -277,7 +364,9 @@ function markdownToHtml(markdown) {
 
         html += `
             <div class="code-block">
+
                 <div class="code-header">
+
                     <span class="code-language">
                         ${language}
                     </span>
@@ -285,31 +374,35 @@ function markdownToHtml(markdown) {
                     <button
                         type="button"
                         class="copy-code-btn"
-                        data-code="${escapeHtml(code)}"
                     >
                         📋 Copy
                     </button>
+
                 </div>
 
                 <pre><code>${safeCode}</code></pre>
+
             </div>
         `;
 
 
         codeLines = [];
+
         codeLanguage = '';
     }
 
 
-    for (let i = 0; i < lines.length; i++) {
+    for (
+        let i = 0;
+        i < lines.length;
+        i++
+    ) {
 
-        const line = lines[i];
+        const line =
+            lines[i];
 
 
-        // ==================================
         // CODE BLOCK
-        // ==================================
-
         if (
             line.trim().startsWith('```')
         ) {
@@ -347,32 +440,34 @@ function markdownToHtml(markdown) {
         }
 
 
-        // ==================================
         // EMPTY LINE
-        // ==================================
-
-        if (line.trim() === '') {
+        if (
+            line.trim() === ''
+        ) {
 
             closeLists();
 
-            html += '<div class="md-space"></div>';
+            html +=
+                '<div class="md-space"></div>';
 
             continue;
         }
 
 
-        // ==================================
         // HEADINGS
-        // ==================================
-
-        if (/^###\s+/.test(line)) {
+        if (
+            /^###\s+/.test(line)
+        ) {
 
             closeLists();
 
             html += `
                 <h4>
                     ${inlineMarkdown(
-                        line.replace(/^###\s+/, '')
+                        line.replace(
+                            /^###\s+/,
+                            ''
+                        )
                     )}
                 </h4>
             `;
@@ -381,14 +476,19 @@ function markdownToHtml(markdown) {
         }
 
 
-        if (/^##\s+/.test(line)) {
+        if (
+            /^##\s+/.test(line)
+        ) {
 
             closeLists();
 
             html += `
                 <h3>
                     ${inlineMarkdown(
-                        line.replace(/^##\s+/, '')
+                        line.replace(
+                            /^##\s+/,
+                            ''
+                        )
                     )}
                 </h3>
             `;
@@ -397,14 +497,19 @@ function markdownToHtml(markdown) {
         }
 
 
-        if (/^#\s+/.test(line)) {
+        if (
+            /^#\s+/.test(line)
+        ) {
 
             closeLists();
 
             html += `
                 <h2>
                     ${inlineMarkdown(
-                        line.replace(/^#\s+/, '')
+                        line.replace(
+                            /^#\s+/,
+                            ''
+                        )
                     )}
                 </h2>
             `;
@@ -413,10 +518,7 @@ function markdownToHtml(markdown) {
         }
 
 
-        // ==================================
         // UNORDERED LIST
-        // ==================================
-
         const unordered =
             line.match(
                 /^\s*[-*+]\s+(.+)$/
@@ -447,10 +549,7 @@ function markdownToHtml(markdown) {
         }
 
 
-        // ==================================
         // ORDERED LIST
-        // ==================================
-
         const ordered =
             line.match(
                 /^\s*\d+\.\s+(.+)$/
@@ -481,11 +580,10 @@ function markdownToHtml(markdown) {
         }
 
 
-        // ==================================
         // BLOCKQUOTE
-        // ==================================
-
-        if (/^\s*>\s?/.test(line)) {
+        if (
+            /^\s*>\s?/.test(line)
+        ) {
 
             closeLists();
 
@@ -504,10 +602,7 @@ function markdownToHtml(markdown) {
         }
 
 
-        // ==================================
         // HORIZONTAL LINE
-        // ==================================
-
         if (
             /^\s*([-*_])\s*\1\s*\1\s*$/.test(line)
         ) {
@@ -520,10 +615,7 @@ function markdownToHtml(markdown) {
         }
 
 
-        // ==================================
         // NORMAL PARAGRAPH
-        // ==================================
-
         closeLists();
 
         html += `
@@ -534,7 +626,7 @@ function markdownToHtml(markdown) {
     }
 
 
-    // Close unfinished code block
+    // unfinished code block
     if (inCodeBlock) {
 
         inCodeBlock = false;
@@ -554,7 +646,10 @@ function markdownToHtml(markdown) {
 // COPY CODE
 // ==========================================
 
-function copyCode(code) {
+async function copyCode(
+    code,
+    button
+) {
 
     const decoded =
         String(code || '')
@@ -565,68 +660,105 @@ function copyCode(code) {
             .replace(/&amp;/g, '&');
 
 
-    if (
-        navigator.clipboard &&
-        navigator.clipboard.writeText
-    ) {
-
-        navigator.clipboard.writeText(decoded)
-            .then(() => {
-                showCopySuccess();
-            })
-            .catch(() => {
-                fallbackCopy(decoded);
-            });
-
-    } else {
-
-        fallbackCopy(decoded);
-    }
-}
-
-
-function fallbackCopy(text) {
-
-    const textarea =
-        document.createElement('textarea');
-
-    textarea.value = text;
-
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-
-    document.body.appendChild(textarea);
-
-    textarea.select();
-
     try {
-        document.execCommand('copy');
-        showCopySuccess();
+
+        if (
+            navigator.clipboard &&
+            navigator.clipboard.writeText
+        ) {
+
+            await navigator.clipboard.writeText(
+                decoded
+            );
+
+        } else {
+
+            fallbackCopy(decoded);
+        }
+
+
+        showCopySuccess(button);
+
     } catch (error) {
+
         console.error(
             'Copy failed:',
             error
         );
+
+        fallbackCopy(
+            decoded,
+            button
+        );
     }
+}
+
+
+function fallbackCopy(
+    text,
+    button = null
+) {
+
+    const textarea =
+        document.createElement(
+            'textarea'
+        );
+
+
+    textarea.value =
+        text;
+
+
+    textarea.style.position =
+        'fixed';
+
+    textarea.style.opacity =
+        '0';
+
+
+    document.body.appendChild(
+        textarea
+    );
+
+
+    textarea.select();
+
+
+    try {
+
+        document.execCommand(
+            'copy'
+        );
+
+        showCopySuccess(button);
+
+    } catch (error) {
+
+        console.error(
+            'Fallback copy failed:',
+            error
+        );
+    }
+
 
     textarea.remove();
 }
 
 
-function showCopySuccess() {
-
-    const button =
-        event?.target?.closest?.(
-            '.copy-code-btn'
-        );
+function showCopySuccess(
+    button
+) {
 
     if (!button) return;
+
 
     const oldText =
         button.textContent;
 
+
     button.textContent =
         '✓ Copied';
+
 
     setTimeout(() => {
 
@@ -654,11 +786,22 @@ document.addEventListener(
         if (!button) return;
 
 
+        const codeElement =
+            button
+                .closest('.code-block')
+                ?.querySelector('pre code');
+
+
         const code =
-            button.dataset.code || '';
+            codeElement
+                ? codeElement.textContent
+                : '';
 
 
-        copyCode(code);
+        copyCode(
+            code,
+            button
+        );
     }
 );
 
@@ -677,7 +820,9 @@ function addMessageBubble(
 
 
     const bubble =
-        document.createElement('div');
+        document.createElement(
+            'div'
+        );
 
 
     bubble.classList.add(
@@ -702,10 +847,15 @@ function addMessageBubble(
             'ai-message'
         );
 
-        if (options.markdown !== false) {
+
+        if (
+            options.markdown !== false
+        ) {
 
             bubble.innerHTML =
-                markdownToHtml(text || '');
+                markdownToHtml(
+                    text || ''
+                );
 
         } else {
 
@@ -721,6 +871,7 @@ function addMessageBubble(
             'ai-message',
             'ai-loading'
         );
+
 
         bubble.innerHTML = `
             <div class="typing-indicator">
@@ -743,9 +894,12 @@ function addMessageBubble(
     }
 
 
-    chatContainer.appendChild(
-        bubble
-    );
+    if (chatContainer) {
+
+        chatContainer.appendChild(
+            bubble
+        );
+    }
 
 
     scrollToBottom();
@@ -786,7 +940,9 @@ async function typeAIResponse(
     if (!content) {
 
         bubble.innerHTML =
-            markdownToHtml(text || '');
+            markdownToHtml(
+                text || ''
+            );
 
         return;
     }
@@ -796,14 +952,19 @@ async function typeAIResponse(
         String(text || '');
 
 
-    // Faster typing for long answers.
     let speed = 14;
 
-    if (fullText.length > 1200) {
+
+    if (
+        fullText.length > 1200
+    ) {
         speed = 5;
     }
 
-    if (fullText.length > 3000) {
+
+    if (
+        fullText.length > 3000
+    ) {
         speed = 2;
     }
 
@@ -821,7 +982,6 @@ async function typeAIResponse(
             fullText[i];
 
 
-        // Keep the visible typing safe.
         content.textContent =
             current;
 
@@ -839,9 +999,10 @@ async function typeAIResponse(
     }
 
 
-    // Convert final answer to Markdown.
     bubble.innerHTML =
-        markdownToHtml(fullText);
+        markdownToHtml(
+            fullText
+        );
 
 
     scrollToBottom();
@@ -864,7 +1025,9 @@ function replaceBubble(
 
 
     const newBubble =
-        document.createElement('div');
+        document.createElement(
+            'div'
+        );
 
 
     newBubble.classList.add(
@@ -890,7 +1053,9 @@ function replaceBubble(
         );
 
         newBubble.innerHTML =
-            markdownToHtml(text || '');
+            markdownToHtml(
+                text || ''
+            );
     }
 
 
@@ -918,15 +1083,121 @@ function replaceBubble(
 
 
 // ==========================================
+// MODEL CAPABILITY
+// ==========================================
+
+function getSelectedCapability() {
+
+    if (!aiModel) {
+        return 'gemini';
+    }
+
+
+    const value =
+        String(
+            aiModel.value || 'gemini'
+        )
+            .trim()
+            .toLowerCase();
+
+
+    // Direct known values
+    if (
+        AI_CAPABILITIES[value]
+    ) {
+
+        return value;
+    }
+
+
+    // Extra protection if HTML uses
+    // labels instead of values.
+
+    if (
+        value.includes('chatgpt') ||
+        value.includes('openai')
+    ) {
+
+        return 'chatgpt';
+    }
+
+
+    if (
+        value.includes('groq')
+    ) {
+
+        return 'groq';
+    }
+
+
+    if (
+        value.includes('deep')
+    ) {
+
+        return 'deep';
+    }
+
+
+    if (
+        value.includes('creative')
+    ) {
+
+        return 'creative';
+    }
+
+
+    if (
+        value.includes('long')
+    ) {
+
+        return 'long';
+    }
+
+
+    if (
+        value.includes('web')
+    ) {
+
+        return 'web';
+    }
+
+
+    if (
+        value.includes('advanced')
+    ) {
+
+        return 'advanced';
+    }
+
+
+    return 'gemini';
+}
+
+
+// ==========================================
 // MODEL STATUS
 // ==========================================
 
 function updateModelStatus() {
 
-    if (!modelStatus) return;
+    if (!modelStatus) {
+        return;
+    }
+
+
+    const capability =
+        getSelectedCapability();
+
+
+    const info =
+        AI_CAPABILITIES[
+            capability
+        ] ||
+        AI_CAPABILITIES.gemini;
+
 
     modelStatus.textContent =
-        'Infinity AI Core Online ✓';
+        info.status;
 }
 
 
@@ -953,16 +1224,19 @@ function readFileAsDataURL(file) {
 
 
             reader.onload =
-                () => resolve(
-                    reader.result
-                );
+                () =>
+                    resolve(
+                        reader.result
+                    );
 
 
             reader.onerror =
                 reject;
 
 
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(
+                file
+            );
         }
     );
 }
@@ -991,11 +1265,14 @@ function createPDFInput() {
         pdfInput.type =
             'file';
 
+
         pdfInput.id =
             'pdfInput';
 
+
         pdfInput.accept =
             'application/pdf,.pdf';
+
 
         pdfInput.hidden =
             true;
@@ -1042,6 +1319,7 @@ function removeSelectedPDF() {
 
     selectedPDF = null;
 
+
     removeExistingPDFPreview();
 
 
@@ -1075,13 +1353,17 @@ function createPDFPreview(file) {
         </div>
 
         <div class="pdf-preview-info">
+
             <strong>
-                ${escapeHtml(file.name)}
+                ${escapeHtml(
+                    file.name
+                )}
             </strong>
 
             <small>
                 PDF selected
             </small>
+
         </div>
 
         <button
@@ -1148,7 +1430,10 @@ async function handlePDFChange(
             'Please select a PDF file.'
         );
 
-        event.target.value = '';
+
+        event.target.value =
+            '';
+
 
         return;
     }
@@ -1191,6 +1476,7 @@ async function handlePDFChange(
             error
         );
 
+
         alert(
             'Could not read the PDF file.'
         );
@@ -1202,7 +1488,9 @@ async function handlePDFChange(
 // IMAGE PREVIEW
 // ==========================================
 
-function createImagePreview(file) {
+function createImagePreview(
+    file
+) {
 
     removeExistingImagePreview();
 
@@ -1230,13 +1518,17 @@ function createImagePreview(file) {
         >
 
         <div class="image-preview-info">
+
             <strong>
-                ${escapeHtml(file.name)}
+                ${escapeHtml(
+                    file.name
+                )}
             </strong>
 
             <small>
                 Image selected
             </small>
+
         </div>
 
         <button
@@ -1298,6 +1590,7 @@ function removeSelectedImage() {
 
     selectedImage = null;
 
+
     removeExistingImagePreview();
 
 
@@ -1352,7 +1645,9 @@ function saveHistory() {
         );
 
 
-        if (currentConversationId) {
+        if (
+            currentConversationId
+        ) {
 
             localStorage.setItem(
                 CURRENT_CHAT_STORAGE_KEY,
@@ -1383,7 +1678,9 @@ function loadHistory() {
         if (stored) {
 
             const parsed =
-                JSON.parse(stored);
+                JSON.parse(
+                    stored
+                );
 
 
             if (
@@ -1395,12 +1692,14 @@ function loadHistory() {
 
             } else {
 
-                conversations = [];
+                conversations =
+                    [];
             }
 
         } else {
 
-            conversations = [];
+            conversations =
+                [];
         }
 
 
@@ -1416,7 +1715,10 @@ function loadHistory() {
             error
         );
 
-        conversations = [];
+
+        conversations =
+            [];
+
 
         currentConversationId =
             null;
@@ -1426,7 +1728,9 @@ function loadHistory() {
 
 function getCurrentConversation() {
 
-    if (!currentConversationId) {
+    if (
+        !currentConversationId
+    ) {
         return null;
     }
 
@@ -1475,6 +1779,7 @@ function createConversation() {
 
     saveHistory();
 
+
     renderConversationList();
 
 
@@ -1519,7 +1824,10 @@ function makeConversationTitle(
     }
 
 
-    if (cleanText.length <= 42) {
+    if (
+        cleanText.length <= 42
+    ) {
+
         return cleanText;
     }
 
@@ -1587,6 +1895,7 @@ function saveChatMessage(
 
     saveHistory();
 
+
     renderConversationList();
 }
 
@@ -1595,7 +1904,8 @@ function clearChatView() {
 
     if (!chatContainer) return;
 
-    chatContainer.innerHTML = '';
+    chatContainer.innerHTML =
+        '';
 }
 
 
@@ -1606,6 +1916,7 @@ function showWelcomeMessage() {
 
     chatContainer.innerHTML = `
         <div class="welcome-message">
+
             <div class="welcome-icon">
                 ✦
             </div>
@@ -1617,6 +1928,7 @@ function showWelcomeMessage() {
             <p>
                 Your intelligent AI assistant is ready.
             </p>
+
         </div>
     `;
 }
@@ -1634,7 +1946,8 @@ function renderConversationMessages(
         !Array.isArray(
             conversation.messages
         ) ||
-        conversation.messages.length === 0
+        conversation.messages.length ===
+            0
     ) {
 
         showWelcomeMessage();
@@ -1646,22 +1959,27 @@ function renderConversationMessages(
     conversation.messages.forEach(
         message => {
 
-            let type = 'ai';
+            let type =
+                'ai';
 
 
             if (
-                message.role === 'user'
+                message.role ===
+                'user'
             ) {
 
-                type = 'user';
+                type =
+                    'user';
             }
 
 
             if (
-                message.role === 'error'
+                message.role ===
+                'error'
             ) {
 
-                type = 'error';
+                type =
+                    'error';
             }
 
 
@@ -1689,7 +2007,9 @@ function loadConversation(
         );
 
 
-    if (!conversation) return;
+    if (!conversation) {
+        return;
+    }
 
 
     currentConversationId =
@@ -1776,6 +2096,7 @@ function deleteConversation(
 
     saveHistory();
 
+
     renderConversationList();
 }
 
@@ -1798,15 +2119,17 @@ function startNewChat() {
 
     clearChatView();
 
+
     showWelcomeMessage();
 
 
     closeHistory();
 
 
-    messageInput.value = '';
-
-    messageInput.focus();
+    if (messageInput) {
+        messageInput.value = '';
+        messageInput.focus();
+    }
 
 
     renderConversationList();
@@ -1833,7 +2156,8 @@ function renderConversationList(
 
 
     oldItems.forEach(
-        item => item.remove()
+        item =>
+            item.remove()
     );
 
 
@@ -1867,7 +2191,8 @@ function renderConversationList(
                         String(
                             conversation.title ||
                             ''
-                        ).toLowerCase();
+                        )
+                            .toLowerCase();
 
 
                     const messages =
@@ -1898,7 +2223,9 @@ function renderConversationList(
     }
 
 
-    if (sorted.length === 0) {
+    if (
+        sorted.length === 0
+    ) {
 
         if (emptyHistory) {
 
@@ -1985,13 +2312,17 @@ function renderConversationList(
                 <button
                     type="button"
                     class="conversation-main"
-                    data-conversation-id="${escapeHtml(conversation.id)}"
+                    data-conversation-id="${escapeHtml(
+                        conversation.id
+                    )}"
                 >
+
                     <span class="conversation-icon">
                         💬
                     </span>
 
                     <span class="conversation-details">
+
                         <strong>
                             ${title}
                         </strong>
@@ -2002,13 +2333,17 @@ function renderConversationList(
                             •
                             ${timeText}
                         </small>
+
                     </span>
+
                 </button>
 
                 <button
                     type="button"
                     class="conversation-delete"
-                    data-delete-id="${escapeHtml(conversation.id)}"
+                    data-delete-id="${escapeHtml(
+                        conversation.id
+                    )}"
                     aria-label="Delete conversation"
                     title="Delete chat"
                 >
@@ -2130,7 +2465,8 @@ function openHistory() {
 
 
     renderConversationList(
-        historySearchInput?.value || ''
+        historySearchInput?.value ||
+        ''
     );
 
 
@@ -2241,7 +2577,8 @@ if (conversationList) {
                 const conversation =
                     conversations.find(
                         item =>
-                            item.id === id
+                            item.id ===
+                            id
                     );
 
 
@@ -2339,11 +2676,15 @@ if (clearAllHistoryBtn) {
 
             clearChatView();
 
+
             showWelcomeMessage();
+
 
             renderConversationList();
 
+
             closeHistory();
+
 
             messageInput?.focus();
         }
@@ -2380,8 +2721,24 @@ async function sendMessage() {
         true;
 
 
-    sendBtn.disabled =
-        true;
+    if (sendBtn) {
+        sendBtn.disabled =
+            true;
+    }
+
+
+    // ======================================
+    // GET SELECTED AI CAPABILITY
+    // ======================================
+
+    const capability =
+        getSelectedCapability();
+
+
+    console.log(
+        '🧠 Selected capability:',
+        capability
+    );
 
 
     // ======================================
@@ -2430,7 +2787,8 @@ async function sendMessage() {
     );
 
 
-    messageInput.value = '';
+    messageInput.value =
+        '';
 
 
     // ======================================
@@ -2446,7 +2804,14 @@ async function sendMessage() {
 
     try {
 
-        let payload = {};
+        let payload = {
+
+            message:
+                text,
+
+            capability:
+                capability
+        };
 
 
         // ==================================
@@ -2457,10 +2822,16 @@ async function sendMessage() {
 
             payload = {
 
-                message: text,
+                message:
+                    text,
+
+                capability:
+                    capability,
 
                 image:
-                    selectedImage.dataUrl,
+                    stripDataUrlPrefix(
+                        selectedImage.dataUrl
+                    ),
 
                 imageMimeType:
                     selectedImage.mimeType
@@ -2476,10 +2847,16 @@ async function sendMessage() {
 
             payload = {
 
-                message: text,
+                message:
+                    text,
+
+                capability:
+                    capability,
 
                 pdf:
-                    selectedPDF.dataUrl,
+                    stripDataUrlPrefix(
+                        selectedPDF.dataUrl
+                    ),
 
                 pdfMimeType:
                     selectedPDF.mimeType,
@@ -2491,20 +2868,31 @@ async function sendMessage() {
 
 
         // ==================================
-        // NORMAL MESSAGE
+        // DEBUG
         // ==================================
 
-        else {
+        console.log(
+            '📤 Sending request:',
+            {
+                capability:
+                    payload.capability,
 
-            payload = {
+                hasImage:
+                    Boolean(payload.image),
 
-                message: text
-            };
-        }
+                hasPDF:
+                    Boolean(payload.pdf),
+
+                messageLength:
+                    String(
+                        payload.message || ''
+                    ).length
+            }
+        );
 
 
         // ==================================
-        // API
+        // API REQUEST
         // ==================================
 
         const response =
@@ -2526,16 +2914,38 @@ async function sendMessage() {
             );
 
 
-        if (!response.ok) {
+        // ==================================
+        // READ RESPONSE
+        // ==================================
+
+        let data = {};
+
+        try {
+
+            data =
+                await response.json();
+
+        } catch (jsonError) {
 
             throw new Error(
-                `Server error: ${response.status}`
+                `Invalid server response (${response.status})`
             );
         }
 
 
-        const data =
-            await response.json();
+        if (!response.ok) {
+
+            console.error(
+                '❌ Backend error:',
+                data
+            );
+
+
+            throw new Error(
+                data.error ||
+                `Server error: ${response.status}`
+            );
+        }
 
 
         const reply =
@@ -2544,8 +2954,23 @@ async function sendMessage() {
             'Sorry, I could not generate a response.';
 
 
+        console.log(
+            '✅ AI response:',
+            {
+                provider:
+                    data.provider,
+
+                model:
+                    data.model,
+
+                capability:
+                    capability
+            }
+        );
+
+
         // ==================================
-        // AI TYPING ANIMATION
+        // AI TYPING
         // ==================================
 
         await typeAIResponse(
@@ -2563,11 +2988,10 @@ async function sendMessage() {
             reply
         );
 
-
     } catch (error) {
 
         console.error(
-            'AI request error:',
+            '❌ AI request error:',
             error
         );
 
@@ -2588,15 +3012,16 @@ async function sendMessage() {
             errorMessage
         );
 
-
     } finally {
 
         isWaitingForResponse =
             false;
 
 
-        sendBtn.disabled =
-            false;
+        if (sendBtn) {
+            sendBtn.disabled =
+                false;
+        }
 
 
         removeSelectedImage();
@@ -2604,7 +3029,7 @@ async function sendMessage() {
         removeSelectedPDF();
 
 
-        messageInput.focus();
+        messageInput?.focus();
     }
 }
 
@@ -2721,7 +3146,9 @@ if (plusMenuOverlay) {
 // COMING SOON
 // ==========================================
 
-function showComingSoon(name) {
+function showComingSoon(
+    name
+) {
 
     alert(
         `${name} is coming soon to Infinity AI 🚀`
@@ -2767,7 +3194,9 @@ function openPDFPicker() {
 
     closePlusMenu();
 
+
     createPDFInput();
+
 
     pdfInput.click();
 }
@@ -2837,7 +3266,7 @@ if (galleryInput) {
                 );
 
 
-                messageInput.focus();
+                messageInput?.focus();
 
             } catch (error) {
 
@@ -2902,7 +3331,7 @@ if (cameraInput) {
                 );
 
 
-                messageInput.focus();
+                messageInput?.focus();
 
             } catch (error) {
 
@@ -3120,7 +3549,16 @@ createPDFInput();
 
 
 if (aiModel) {
-    aiModel.value = 'gemini';
+
+    /*
+     * Keep existing HTML selection if possible.
+     * If nothing is selected, use Gemini.
+     */
+    if (!aiModel.value) {
+
+        aiModel.value =
+            'gemini';
+    }
 }
 
 
@@ -3134,7 +3572,10 @@ const chatTab =
 
 
 if (chatTab) {
-    chatTab.classList.add('active');
+
+    chatTab.classList.add(
+        'active'
+    );
 }
 
 
@@ -3142,6 +3583,10 @@ if (messageInput) {
     messageInput.focus();
 }
 
+
+// ==========================================
+// CONSOLE
+// ==========================================
 
 console.log(
     '================================'
@@ -3154,6 +3599,11 @@ console.log(
 console.log(
     '🧠 AI API:',
     API_URL
+);
+
+console.log(
+    '🎯 Selected capability:',
+    getSelectedCapability()
 );
 
 console.log(
@@ -3183,6 +3633,14 @@ console.log(
 
 console.log(
     '➕ Plus Menu: Ready'
+);
+
+console.log(
+    '🤖 ChatGPT Routing: Ready'
+);
+
+console.log(
+    '🔥 Groq Routing: Ready'
 );
 
 console.log(
