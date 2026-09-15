@@ -16,7 +16,7 @@ app.use(cors());
 app.use(express.json({ limit: "25mb" }));
 
 /* =========================
-   AI MODELS
+   MODELS
 ========================= */
 
 const GEMINI_MODEL =
@@ -37,7 +37,7 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 /* =========================
-   GEMINI CLIENT
+   GEMINI
 ========================= */
 
 const genAI = GEMINI_API_KEY
@@ -47,7 +47,7 @@ const genAI = GEMINI_API_KEY
   : null;
 
 /* =========================
-   STARTUP LOG
+   STARTUP
 ========================= */
 
 console.log("=================================");
@@ -78,7 +78,6 @@ function normalizeCapability(value) {
     .trim()
     .toLowerCase();
 
-  // ChatGPT / OpenAI
   if (
     v === "chatgpt" ||
     v === "openai" ||
@@ -87,7 +86,6 @@ function normalizeCapability(value) {
     return "chatgpt";
   }
 
-  // Groq
   if (
     v === "groq" ||
     v.includes("groq")
@@ -95,12 +93,20 @@ function normalizeCapability(value) {
     return "groq";
   }
 
-  // Everything else defaults to Gemini
+  if (
+    v === "websearch" ||
+    v === "web-search" ||
+    v === "web_search" ||
+    v.includes("web search")
+  ) {
+    return "websearch";
+  }
+
   return "gemini";
 }
 
 /* =========================
-   GEMINI TEXT
+   GEMINI NORMAL
 ========================= */
 
 async function runGemini(message) {
@@ -126,7 +132,76 @@ async function runGemini(message) {
 }
 
 /* =========================
-   GROQ TEXT
+   GEMINI WEB SEARCH
+========================= */
+
+async function runGeminiWebSearch(message) {
+  if (!genAI) {
+    throw new Error("GEMINI_API_KEY is not configured.");
+  }
+
+  const response = await genAI.models.generateContent({
+    model: GEMINI_MODEL,
+
+    contents: message,
+
+    config: {
+      tools: [
+        {
+          googleSearch: {},
+        },
+      ],
+    },
+  });
+
+  const reply =
+    response?.text ||
+    response?.candidates?.[0]?.content?.parts?.[0]?.text ||
+    "";
+
+  if (!reply) {
+    throw new Error(
+      "Web Search returned an empty response."
+    );
+  }
+
+  /* =========================
+     EXTRACT SOURCES
+  ========================= */
+
+  const sources = [];
+
+  const chunks =
+    response?.candidates?.[0]?.groundingMetadata
+      ?.groundingChunks || [];
+
+  for (const chunk of chunks) {
+    if (chunk?.web) {
+      sources.push({
+        title: chunk.web.title || "Web Source",
+        url: chunk.web.uri || "",
+      });
+    }
+  }
+
+  /* Remove duplicate URLs */
+  const uniqueSources = sources.filter(
+    (source, index, self) =>
+      source.url &&
+      index ===
+        self.findIndex(
+          (item) => item.url === source.url
+        )
+  );
+
+  return {
+    reply,
+    sources: uniqueSources,
+  };
+}
+
+/* =========================
+   GROQ
 ========================= */
 
 async function runGroq(message) {
@@ -201,6 +276,7 @@ async function runOpenAI(message) {
         input: [
           {
             role: "user",
+
             content: [
               {
                 type: "input_text",
@@ -262,10 +338,6 @@ async function runGeminiVision(
     throw new Error("GEMINI_API_KEY is not configured.");
   }
 
-  if (!imageBase64) {
-    throw new Error("Image data is missing.");
-  }
-
   const response = await genAI.models.generateContent({
     model: GEMINI_MODEL,
 
@@ -321,10 +393,6 @@ async function runGeminiPDF(
     throw new Error("GEMINI_API_KEY is not configured.");
   }
 
-  if (!pdfBase64) {
-    throw new Error("PDF data is missing.");
-  }
-
   const response = await genAI.models.generateContent({
     model: GEMINI_MODEL,
 
@@ -369,7 +437,7 @@ async function runGeminiPDF(
 }
 
 /* =========================
-   HEALTH CHECK
+   HEALTH
 ========================= */
 
 app.get("/api/health", (req, res) => {
@@ -394,6 +462,7 @@ app.get("/api/health", (req, res) => {
       infinity_ai_core: !!GEMINI_API_KEY,
       chatgpt: !!OPENAI_API_KEY,
       groq: !!GROQ_API_KEY,
+      web_search: !!GEMINI_API_KEY,
       pdf: !!GEMINI_API_KEY,
       image: !!GEMINI_API_KEY,
     },
@@ -436,28 +505,61 @@ app.post("/api/chat", async (req, res) => {
 
     console.log("=================================");
     console.log("📩 New request");
-    console.log("Capability:", selectedCapability);
+    console.log(
+      "Capability:",
+      selectedCapability
+    );
     console.log("Has Image:", !!image);
     console.log("Has PDF:", !!pdf);
     console.log("=================================");
 
     /* =========================
+       WEB SEARCH
+    ========================= */
+
+    if (
+      selectedCapability === "websearch"
+    ) {
+      console.log(
+        "🌐 Web Search → Google Search + Gemini"
+      );
+
+      const result =
+        await runGeminiWebSearch(
+          userMessage
+        );
+
+      return res.json({
+        success: true,
+
+        provider: "Gemini + Google Search",
+
+        model: GEMINI_MODEL,
+
+        capability: "websearch",
+
+        reply: result.reply,
+
+        sources: result.sources,
+      });
+    }
+
+    /* =========================
        PDF
-       =========================
-       PDF currently uses Gemini
-    */
+    ========================= */
 
     if (pdf) {
       console.log(
-        "📄 PDF request → Gemini"
+        "📄 PDF → Gemini"
       );
 
-      const reply = await runGeminiPDF(
-        userMessage,
-        pdf,
-        pdfMimeType,
-        fileName
-      );
+      const reply =
+        await runGeminiPDF(
+          userMessage,
+          pdf,
+          pdfMimeType,
+          fileName
+        );
 
       return res.json({
         success: true,
@@ -470,20 +572,19 @@ app.post("/api/chat", async (req, res) => {
 
     /* =========================
        IMAGE
-       =========================
-       Image currently uses Gemini Vision
-    */
+    ========================= */
 
     if (image) {
       console.log(
-        "🖼️ Image request → Gemini Vision"
+        "🖼️ Image → Gemini Vision"
       );
 
-      const reply = await runGeminiVision(
-        userMessage,
-        image,
-        imageMimeType
-      );
+      const reply =
+        await runGeminiVision(
+          userMessage,
+          image,
+          imageMimeType
+        );
 
       return res.json({
         success: true,
@@ -495,17 +596,20 @@ app.post("/api/chat", async (req, res) => {
     }
 
     /* =========================
-       DIRECT CHATGPT
+       CHATGPT
     ========================= */
 
-    if (selectedCapability === "chatgpt") {
+    if (
+      selectedCapability === "chatgpt"
+    ) {
       console.log(
-        "🤖 Direct provider → OpenAI / ChatGPT"
+        "🤖 Direct → ChatGPT/OpenAI"
       );
 
-      const reply = await runOpenAI(
-        userMessage
-      );
+      const reply =
+        await runOpenAI(
+          userMessage
+        );
 
       return res.json({
         success: true,
@@ -517,17 +621,20 @@ app.post("/api/chat", async (req, res) => {
     }
 
     /* =========================
-       DIRECT GROQ
+       GROQ
     ========================= */
 
-    if (selectedCapability === "groq") {
+    if (
+      selectedCapability === "groq"
+    ) {
       console.log(
-        "⚡ Direct provider → Groq"
+        "⚡ Direct → Groq"
       );
 
-      const reply = await runGroq(
-        userMessage
-      );
+      const reply =
+        await runGroq(
+          userMessage
+        );
 
       return res.json({
         success: true,
@@ -542,14 +649,15 @@ app.post("/api/chat", async (req, res) => {
        GEMINI
     ========================= */
 
-    console.log(
-      "✨ Direct provider → Gemini"
-    );
-
     try {
-      const reply = await runGemini(
-        userMessage
+      console.log(
+        "✨ Direct → Gemini"
       );
+
+      const reply =
+        await runGemini(
+          userMessage
+        );
 
       return res.json({
         success: true,
@@ -564,25 +672,25 @@ app.post("/api/chat", async (req, res) => {
         geminiError.message
       );
 
-      /* =========================
-         GROQ FALLBACK
-      ========================= */
+      /* GROQ FALLBACK */
 
       if (GROQ_API_KEY) {
         try {
           console.log(
-            "🔄 Gemini failed → Groq fallback"
+            "🔄 Gemini → Groq fallback"
           );
 
-          const reply = await runGroq(
-            userMessage
-          );
+          const reply =
+            await runGroq(
+              userMessage
+            );
 
           return res.json({
             success: true,
             provider: "Groq",
             model: GROQ_MODEL,
-            capability: "groq-fallback",
+            capability:
+              "groq-fallback",
             reply,
           });
         } catch (groqError) {
@@ -593,25 +701,25 @@ app.post("/api/chat", async (req, res) => {
         }
       }
 
-      /* =========================
-         OPENAI FALLBACK
-      ========================= */
+      /* OPENAI FALLBACK */
 
       if (OPENAI_API_KEY) {
         try {
           console.log(
-            "🔄 Gemini/Groq failed → OpenAI fallback"
+            "🔄 Gemini/Groq → OpenAI fallback"
           );
 
-          const reply = await runOpenAI(
-            userMessage
-          );
+          const reply =
+            await runOpenAI(
+              userMessage
+            );
 
           return res.json({
             success: true,
             provider: "OpenAI",
             model: OPENAI_MODEL,
-            capability: "chatgpt-fallback",
+            capability:
+              "chatgpt-fallback",
             reply,
           });
         } catch (openAIError) {
@@ -624,11 +732,10 @@ app.post("/api/chat", async (req, res) => {
 
       return res.status(500).json({
         success: false,
-
         error:
           "All AI providers failed.",
-
-        details: geminiError.message,
+        details:
+          geminiError.message,
       });
     }
   } catch (error) {
@@ -658,7 +765,7 @@ app.use((req, res) => {
 });
 
 /* =========================
-   START SERVER
+   START
 ========================= */
 
 app.listen(
