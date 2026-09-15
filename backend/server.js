@@ -1,158 +1,147 @@
-require('dotenv').config();
+require("dotenv").config();
 
-const express = require('express');
-const cors = require('cors');
-const { GoogleGenAI } = require('@google/genai');
+const express = require("express");
+const cors = require("cors");
+const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
 
-// =====================================================
-// PORT
-// =====================================================
+/* =========================
+   SERVER CONFIG
+========================= */
 
 const PORT = Number(process.env.PORT) || 10000;
 
-// =====================================================
-// MIDDLEWARE
-// =====================================================
-
 app.use(cors());
+app.use(express.json({ limit: "25mb" }));
 
-app.use(
-  express.json({
-    limit: '25mb'
-  })
-);
-
-// =====================================================
-// MODELS
-// =====================================================
+/* =========================
+   AI MODELS
+========================= */
 
 const GEMINI_MODEL =
-  process.env.GEMINI_MODEL || 'gemini-3.7-flash';
+  process.env.GEMINI_MODEL || "gemini-3.7-flash";
 
 const GROQ_MODEL =
-  process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
+  process.env.GROQ_MODEL || "openai/gpt-oss-20b";
 
 const OPENAI_MODEL =
-  process.env.OPENAI_MODEL || 'gpt-5.6-luna';
+  process.env.OPENAI_MODEL || "gpt-5.6-luna";
 
-// =====================================================
-// API KEYS
-// =====================================================
+/* =========================
+   API KEYS
+========================= */
 
-const GEMINI_API_KEY =
-  process.env.GEMINI_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-const GROQ_API_KEY =
-  process.env.GROQ_API_KEY;
+/* =========================
+   GEMINI CLIENT
+========================= */
 
-const OPENAI_API_KEY =
-  process.env.OPENAI_API_KEY;
+const genAI = GEMINI_API_KEY
+  ? new GoogleGenAI({
+      apiKey: GEMINI_API_KEY,
+    })
+  : null;
 
-// =====================================================
-// GEMINI CLIENT
-// =====================================================
+/* =========================
+   STARTUP LOG
+========================= */
 
-let gemini = null;
+console.log("=================================");
+console.log("🚀 Infinity AI Backend Starting");
+console.log("=================================");
 
-if (GEMINI_API_KEY) {
-  gemini = new GoogleGenAI({
-    apiKey: GEMINI_API_KEY
-  });
-}
+console.log("Port:", PORT);
+console.log("Gemini Key:", !!GEMINI_API_KEY);
+console.log("Groq Key:", !!GROQ_API_KEY);
+console.log("OpenAI Key:", !!OPENAI_API_KEY);
 
-// =====================================================
-// STARTUP
-// =====================================================
+console.log("Gemini Model:", GEMINI_MODEL);
+console.log("Groq Model:", GROQ_MODEL);
+console.log("OpenAI Model:", OPENAI_MODEL);
 
-console.log('================================');
-console.log('🚀 INFINITY AI');
-console.log('================================');
+console.log("=================================");
 
-console.log(
-  `🧠 Gemini: ${
-    GEMINI_API_KEY
-      ? GEMINI_MODEL
-      : 'NOT CONFIGURED'
-  }`
-);
-
-console.log(
-  `🔥 Groq: ${
-    GROQ_API_KEY
-      ? GROQ_MODEL
-      : 'NOT CONFIGURED'
-  }`
-);
-
-console.log(
-  `🤖 OpenAI: ${
-    OPENAI_API_KEY
-      ? OPENAI_MODEL
-      : 'NOT CONFIGURED'
-  }`
-);
-
-console.log('================================');
-
-// =====================================================
-// CLEAN MESSAGE
-// =====================================================
+/* =========================
+   HELPERS
+========================= */
 
 function cleanMessage(message) {
-  if (!message) return '';
-  return String(message).trim();
+  return String(message || "").trim();
 }
 
-// =====================================================
-// GEMINI TEXT
-// =====================================================
+function normalizeCapability(value) {
+  const v = String(value || "gemini")
+    .trim()
+    .toLowerCase();
 
-async function runGemini(message) {
-  if (!gemini) {
-    throw new Error(
-      'Gemini API key is not configured'
-    );
+  // ChatGPT / OpenAI
+  if (
+    v === "chatgpt" ||
+    v === "openai" ||
+    v.includes("chatgpt")
+  ) {
+    return "chatgpt";
   }
 
-  const response =
-    await gemini.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: message
-    });
+  // Groq
+  if (
+    v === "groq" ||
+    v.includes("groq")
+  ) {
+    return "groq";
+  }
 
-  const reply = response.text;
+  // Everything else defaults to Gemini
+  return "gemini";
+}
+
+/* =========================
+   GEMINI TEXT
+========================= */
+
+async function runGemini(message) {
+  if (!genAI) {
+    throw new Error("GEMINI_API_KEY is not configured.");
+  }
+
+  const response = await genAI.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: message,
+  });
+
+  const reply =
+    response?.text ||
+    response?.candidates?.[0]?.content?.parts?.[0]?.text ||
+    "";
 
   if (!reply) {
-    throw new Error(
-      'Gemini returned empty response'
-    );
+    throw new Error("Gemini returned an empty response.");
   }
 
   return reply;
 }
 
-// =====================================================
-// GROQ
-// =====================================================
+/* =========================
+   GROQ TEXT
+========================= */
 
 async function runGroq(message) {
   if (!GROQ_API_KEY) {
-    throw new Error(
-      'Groq API key is not configured'
-    );
+    throw new Error("GROQ_API_KEY is not configured.");
   }
 
   const response = await fetch(
-    'https://api.groq.com/openai/v1/chat/completions',
+    "https://api.groq.com/openai/v1/chat/completions",
     {
-      method: 'POST',
+      method: "POST",
 
       headers: {
-        'Content-Type': 'application/json',
-        Authorization:
-          `Bearer ${GROQ_API_KEY}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${GROQ_API_KEY}`,
       },
 
       body: JSON.stringify({
@@ -160,245 +149,264 @@ async function runGroq(message) {
 
         messages: [
           {
-            role: 'system',
-            content:
-              'You are Infinity AI, a helpful, accurate and clear AI assistant.'
+            role: "user",
+            content: message,
           },
-
-          {
-            role: 'user',
-            content: message
-          }
-        ]
-      })
+        ],
+      }),
     }
   );
 
-  if (!response.ok) {
-    const error =
-      await response.text();
+  const data = await response.json();
 
+  if (!response.ok) {
     throw new Error(
-      `Groq ${response.status}: ${error}`
+      data?.error?.message ||
+        `Groq request failed with status ${response.status}`
     );
   }
 
-  const data =
-    await response.json();
-
   const reply =
-    data?.choices?.[0]?.message?.content;
+    data?.choices?.[0]?.message?.content || "";
 
   if (!reply) {
-    throw new Error(
-      'Groq returned empty response'
-    );
+    throw new Error("Groq returned an empty response.");
   }
 
   return reply;
 }
 
-// =====================================================
-// OPENAI
-// No OpenAI npm package required
-// =====================================================
+/* =========================
+   OPENAI / CHATGPT
+========================= */
 
 async function runOpenAI(message) {
   if (!OPENAI_API_KEY) {
-    throw new Error(
-      'OpenAI API key is not configured'
-    );
+    throw new Error("OPENAI_API_KEY is not configured.");
   }
 
   const response = await fetch(
-    'https://api.openai.com/v1/responses',
+    "https://api.openai.com/v1/responses",
     {
-      method: 'POST',
+      method: "POST",
 
       headers: {
-        'Content-Type': 'application/json',
-        Authorization:
-          `Bearer ${OPENAI_API_KEY}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
 
       body: JSON.stringify({
         model: OPENAI_MODEL,
 
-        instructions:
-          'You are Infinity AI, a helpful, accurate and clear AI assistant. Answer naturally and directly.',
-
-        input: message
-      })
+        input: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "input_text",
+                text: message,
+              },
+            ],
+          },
+        ],
+      }),
     }
   );
 
-  if (!response.ok) {
-    const error =
-      await response.text();
+  const data = await response.json();
 
+  if (!response.ok) {
     throw new Error(
-      `OpenAI ${response.status}: ${error}`
+      data?.error?.message ||
+        `OpenAI request failed with status ${response.status}`
     );
   }
 
-  const data =
-    await response.json();
+  let reply = "";
 
-  let reply = data?.output_text;
-
-  // Extra fallback for Responses API output format
-  if (!reply && Array.isArray(data?.output)) {
-    reply = data.output
-      .flatMap(item =>
-        Array.isArray(item?.content)
-          ? item.content
-          : []
-      )
-      .map(item =>
-        item?.text || ''
-      )
-      .filter(Boolean)
-      .join('\n');
+  if (typeof data?.output_text === "string") {
+    reply = data.output_text;
   }
+
+  if (!reply && Array.isArray(data?.output)) {
+    for (const item of data.output) {
+      if (!Array.isArray(item?.content)) continue;
+
+      for (const part of item.content) {
+        if (typeof part?.text === "string") {
+          reply += part.text;
+        }
+      }
+    }
+  }
+
+  reply = reply.trim();
 
   if (!reply) {
-    throw new Error(
-      'OpenAI returned empty response'
-    );
+    throw new Error("OpenAI returned an empty response.");
   }
 
   return reply;
 }
 
-// =====================================================
-// GEMINI VISION
-// =====================================================
+/* =========================
+   GEMINI IMAGE
+========================= */
 
 async function runGeminiVision(
   message,
-  image,
-  mimeType
+  imageBase64,
+  imageMimeType
 ) {
-  if (!gemini) {
-    throw new Error(
-      'Gemini API key is not configured'
-    );
+  if (!genAI) {
+    throw new Error("GEMINI_API_KEY is not configured.");
   }
 
-  const response =
-    await gemini.models.generateContent({
-      model: GEMINI_MODEL,
+  if (!imageBase64) {
+    throw new Error("Image data is missing.");
+  }
 
-      contents: [
-        {
-          inlineData: {
-            mimeType:
-              mimeType || 'image/jpeg',
+  const response = await genAI.models.generateContent({
+    model: GEMINI_MODEL,
 
-            data: image
-          }
-        },
+    contents: [
+      {
+        role: "user",
 
-        {
-          text:
-            message ||
-            'Analyze this image carefully and explain what you see.'
-        }
-      ]
-    });
+        parts: [
+          {
+            text:
+              message ||
+              "Analyze this image and explain what you see.",
+          },
 
-  const reply = response.text;
+          {
+            inlineData: {
+              mimeType:
+                imageMimeType || "image/jpeg",
+
+              data: imageBase64,
+            },
+          },
+        ],
+      },
+    ],
+  });
+
+  const reply =
+    response?.text ||
+    response?.candidates?.[0]?.content?.parts?.[0]?.text ||
+    "";
 
   if (!reply) {
     throw new Error(
-      'Gemini Vision returned empty response'
+      "Gemini image analysis returned an empty response."
     );
   }
 
   return reply;
 }
 
-// =====================================================
-// GEMINI PDF
-// =====================================================
+/* =========================
+   GEMINI PDF
+========================= */
 
 async function runGeminiPDF(
   message,
-  pdf,
-  mimeType
+  pdfBase64,
+  pdfMimeType,
+  fileName
 ) {
-  if (!gemini) {
-    throw new Error(
-      'Gemini API key is not configured'
-    );
+  if (!genAI) {
+    throw new Error("GEMINI_API_KEY is not configured.");
   }
 
-  const response =
-    await gemini.models.generateContent({
-      model: GEMINI_MODEL,
+  if (!pdfBase64) {
+    throw new Error("PDF data is missing.");
+  }
 
-      contents: [
-        {
-          inlineData: {
-            mimeType:
-              mimeType ||
-              'application/pdf',
+  const response = await genAI.models.generateContent({
+    model: GEMINI_MODEL,
 
-            data: pdf
-          }
-        },
+    contents: [
+      {
+        role: "user",
 
-        {
-          text:
-            message ||
-            'Analyze this PDF and explain its contents clearly.'
-        }
-      ]
-    });
+        parts: [
+          {
+            text:
+              message ||
+              `Analyze this PDF${
+                fileName ? ` (${fileName})` : ""
+              } and explain the important information.`,
+          },
 
-  const reply = response.text;
+          {
+            inlineData: {
+              mimeType:
+                pdfMimeType || "application/pdf",
+
+              data: pdfBase64,
+            },
+          },
+        ],
+      },
+    ],
+  });
+
+  const reply =
+    response?.text ||
+    response?.candidates?.[0]?.content?.parts?.[0]?.text ||
+    "";
 
   if (!reply) {
     throw new Error(
-      'Gemini PDF returned empty response'
+      "Gemini PDF analysis returned an empty response."
     );
   }
 
   return reply;
 }
 
-// =====================================================
-// HEALTH
-// =====================================================
+/* =========================
+   HEALTH CHECK
+========================= */
 
-app.get('/api/health', (req, res) => {
+app.get("/api/health", (req, res) => {
   res.json({
-    status: 'ok',
+    status: "ok",
 
-    service: 'Infinity AI Backend',
+    service: "Infinity AI Backend",
 
     providers: {
-      gemini: Boolean(GEMINI_API_KEY),
-      groq: Boolean(GROQ_API_KEY),
-      openai: Boolean(OPENAI_API_KEY)
+      gemini: !!GEMINI_API_KEY,
+      groq: !!GROQ_API_KEY,
+      openai: !!OPENAI_API_KEY,
     },
 
     models: {
       gemini: GEMINI_MODEL,
       groq: GROQ_MODEL,
-      openai: OPENAI_MODEL
+      openai: OPENAI_MODEL,
     },
 
-    timestamp:
-      new Date().toISOString()
+    capabilities: {
+      infinity_ai_core: !!GEMINI_API_KEY,
+      chatgpt: !!OPENAI_API_KEY,
+      groq: !!GROQ_API_KEY,
+      pdf: !!GEMINI_API_KEY,
+      image: !!GEMINI_API_KEY,
+    },
+
+    timestamp: new Date().toISOString(),
   });
 });
 
-// =====================================================
-// CHAT
-// =====================================================
+/* =========================
+   CHAT API
+========================= */
 
-app.post('/api/chat', async (req, res) => {
+app.post("/api/chat", async (req, res) => {
   try {
     const {
       message,
@@ -407,15 +415,10 @@ app.post('/api/chat', async (req, res) => {
       imageMimeType,
       pdf,
       pdfMimeType,
-      fileName
+      fileName,
     } = req.body;
 
-    const userMessage =
-      cleanMessage(message);
-
-    // =================================================
-    // VALIDATION
-    // =================================================
+    const userMessage = cleanMessage(message);
 
     if (
       !userMessage &&
@@ -424,239 +427,246 @@ app.post('/api/chat', async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        error:
-          'Message, image or PDF is required'
+        error: "Message is required.",
       });
     }
 
-    // =================================================
-    // PDF
-    // =================================================
+    const selectedCapability =
+      normalizeCapability(capability);
+
+    console.log("=================================");
+    console.log("📩 New request");
+    console.log("Capability:", selectedCapability);
+    console.log("Has Image:", !!image);
+    console.log("Has PDF:", !!pdf);
+    console.log("=================================");
+
+    /* =========================
+       PDF
+       =========================
+       PDF currently uses Gemini
+    */
 
     if (pdf) {
       console.log(
-        `📄 PDF request${
-          fileName
-            ? `: ${fileName}`
-            : ''
-        }`
+        "📄 PDF request → Gemini"
       );
 
-      const reply =
-        await runGeminiPDF(
-          userMessage,
-          pdf,
-          pdfMimeType
-        );
+      const reply = await runGeminiPDF(
+        userMessage,
+        pdf,
+        pdfMimeType,
+        fileName
+      );
 
       return res.json({
         success: true,
-        provider: 'Gemini',
-        type: 'pdf',
-        reply
+        provider: "Gemini",
+        model: GEMINI_MODEL,
+        capability: "gemini",
+        reply,
       });
     }
 
-    // =================================================
-    // IMAGE
-    // =================================================
+    /* =========================
+       IMAGE
+       =========================
+       Image currently uses Gemini Vision
+    */
 
     if (image) {
       console.log(
-        '👁️ Image understanding request'
+        "🖼️ Image request → Gemini Vision"
       );
 
-      const reply =
-        await runGeminiVision(
-          userMessage,
-          image,
-          imageMimeType
-        );
+      const reply = await runGeminiVision(
+        userMessage,
+        image,
+        imageMimeType
+      );
 
       return res.json({
         success: true,
-        provider: 'Gemini Vision',
-        type: 'image',
-        reply
+        provider: "Gemini",
+        model: GEMINI_MODEL,
+        capability: "gemini",
+        reply,
       });
     }
 
-    // =================================================
-    // DIRECT CHATGPT
-    // =================================================
+    /* =========================
+       DIRECT CHATGPT
+    ========================= */
 
-    if (
-      capability === 'chatgpt' ||
-      capability === 'openai' ||
-      capability === 'ChatGPT'
-    ) {
+    if (selectedCapability === "chatgpt") {
       console.log(
-        '🤖 Direct OpenAI request'
+        "🤖 Direct provider → OpenAI / ChatGPT"
       );
 
-      try {
-        const reply =
-          await runOpenAI(
+      const reply = await runOpenAI(
+        userMessage
+      );
+
+      return res.json({
+        success: true,
+        provider: "OpenAI",
+        model: OPENAI_MODEL,
+        capability: "chatgpt",
+        reply,
+      });
+    }
+
+    /* =========================
+       DIRECT GROQ
+    ========================= */
+
+    if (selectedCapability === "groq") {
+      console.log(
+        "⚡ Direct provider → Groq"
+      );
+
+      const reply = await runGroq(
+        userMessage
+      );
+
+      return res.json({
+        success: true,
+        provider: "Groq",
+        model: GROQ_MODEL,
+        capability: "groq",
+        reply,
+      });
+    }
+
+    /* =========================
+       GEMINI
+    ========================= */
+
+    console.log(
+      "✨ Direct provider → Gemini"
+    );
+
+    try {
+      const reply = await runGemini(
+        userMessage
+      );
+
+      return res.json({
+        success: true,
+        provider: "Gemini",
+        model: GEMINI_MODEL,
+        capability: "gemini",
+        reply,
+      });
+    } catch (geminiError) {
+      console.error(
+        "❌ Gemini failed:",
+        geminiError.message
+      );
+
+      /* =========================
+         GROQ FALLBACK
+      ========================= */
+
+      if (GROQ_API_KEY) {
+        try {
+          console.log(
+            "🔄 Gemini failed → Groq fallback"
+          );
+
+          const reply = await runGroq(
             userMessage
           );
 
-        return res.json({
-          success: true,
-          provider: 'OpenAI',
-          model: OPENAI_MODEL,
-          reply
-        });
-
-      } catch (error) {
-        console.error(
-          '❌ OpenAI failed:',
-          error.message
-        );
-
-        return res.status(503).json({
-          success: false,
-          provider: 'OpenAI',
-          error:
-            'OpenAI service is currently unavailable.'
-        });
+          return res.json({
+            success: true,
+            provider: "Groq",
+            model: GROQ_MODEL,
+            capability: "groq-fallback",
+            reply,
+          });
+        } catch (groqError) {
+          console.error(
+            "❌ Groq fallback failed:",
+            groqError.message
+          );
+        }
       }
-    }
 
-    // =================================================
-    // 1️⃣ GEMINI MAIN
-    // =================================================
+      /* =========================
+         OPENAI FALLBACK
+      ========================= */
 
-    if (gemini) {
-      try {
-        console.log(
-          '🧠 Gemini request'
-        );
+      if (OPENAI_API_KEY) {
+        try {
+          console.log(
+            "🔄 Gemini/Groq failed → OpenAI fallback"
+          );
 
-        const reply =
-          await runGemini(
+          const reply = await runOpenAI(
             userMessage
           );
 
-        return res.json({
-          success: true,
-          provider: 'Gemini',
-          model: GEMINI_MODEL,
-          reply
-        });
-
-      } catch (error) {
-        console.error(
-          '❌ Gemini failed:',
-          error.message
-        );
-      }
-    }
-
-    // =================================================
-    // 2️⃣ GROQ FALLBACK
-    // =================================================
-
-    if (GROQ_API_KEY) {
-      try {
-        console.log(
-          '🔥 Groq fallback'
-        );
-
-        const reply =
-          await runGroq(
-            userMessage
+          return res.json({
+            success: true,
+            provider: "OpenAI",
+            model: OPENAI_MODEL,
+            capability: "chatgpt-fallback",
+            reply,
+          });
+        } catch (openAIError) {
+          console.error(
+            "❌ OpenAI fallback failed:",
+            openAIError.message
           );
-
-        return res.json({
-          success: true,
-          provider: 'Groq',
-          model: GROQ_MODEL,
-          reply
-        });
-
-      } catch (error) {
-        console.error(
-          '❌ Groq failed:',
-          error.message
-        );
+        }
       }
+
+      return res.status(500).json({
+        success: false,
+
+        error:
+          "All AI providers failed.",
+
+        details: geminiError.message,
+      });
     }
-
-    // =================================================
-    // 3️⃣ OPENAI FALLBACK
-    // =================================================
-
-    if (OPENAI_API_KEY) {
-      try {
-        console.log(
-          '🤖 OpenAI fallback'
-        );
-
-        const reply =
-          await runOpenAI(
-            userMessage
-          );
-
-        return res.json({
-          success: true,
-          provider: 'OpenAI',
-          model: OPENAI_MODEL,
-          reply
-        });
-
-      } catch (error) {
-        console.error(
-          '❌ OpenAI failed:',
-          error.message
-        );
-      }
-    }
-
-    // =================================================
-    // ALL FAILED
-    // =================================================
-
-    return res.status(503).json({
-      success: false,
-      error:
-        'All AI services are currently unavailable.'
-    });
-
   } catch (error) {
     console.error(
-      '❌ Server error:',
-      error.message
+      "🔥 /api/chat error:",
+      error
     );
 
     return res.status(500).json({
       success: false,
+
       error:
-        'AI service error. Please try again later.'
+        error?.message ||
+        "Internal server error.",
     });
   }
 });
 
-// =====================================================
-// 404
-// =====================================================
+/* =========================
+   404
+========================= */
 
 app.use((req, res) => {
   res.status(404).json({
-    success: false,
-    error: 'Endpoint not found'
+    error: "Endpoint not found",
   });
 });
 
-// =====================================================
-// START SERVER
-// =====================================================
+/* =========================
+   START SERVER
+========================= */
 
 app.listen(
   PORT,
-  '0.0.0.0',
+  "0.0.0.0",
   () => {
     console.log(
-      `✅ Server running on http://localhost:${PORT}`
+      `✅ Infinity AI Backend running on port ${PORT}`
     );
   }
 );
