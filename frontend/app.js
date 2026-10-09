@@ -1,3648 +1,1839 @@
-// ==========================================
-// INFINITY AI - APP.JS
-// Chat + History + Image + PDF
-// Gemini + ChatGPT + Groq Routing
-// Typing Animation + Markdown + Code Blocks
-// ==========================================
+/* =========================================================
+   INFINITY AI — FRONTEND APP.JS
+   Features:
+   - Gemini
+   - ChatGPT / OpenAI
+   - Groq
+   - Web Search
+   - Chat History
+   - Markdown
+   - Code blocks + Copy
+   - Typing animation
+   - Gallery
+   - Camera
+   - Image Understanding
+   - PDF Analysis
+========================================================= */
+
+
+/* =========================================================
+   API
+========================================================= */
 
 const API_URL =
-    'https://ai-super-app-3fr7.onrender.com/api/chat';
+  "https://ai-super-app-3fr7.onrender.com/api/chat";
 
 
-// ==========================================
-// DOM ELEMENTS
-// ==========================================
+/* =========================================================
+   AI CAPABILITIES
+========================================================= */
 
-const chatContainer =
-    document.getElementById('chatContainer');
+const AI_CAPABILITIES = [
+  {
+    value: "gemini",
+    label: "Infinity AI Core"
+  },
+
+  {
+    value: "chatgpt",
+    label: "ChatGPT"
+  },
+
+  {
+    value: "groq",
+    label: "Groq"
+  },
+
+  {
+    value: "websearch",
+    label: "🌐 Web Search"
+  },
+
+  {
+    value: "deep",
+    label: "Deep Reasoning"
+  },
+
+  {
+    value: "advanced",
+    label: "Advanced Assistant"
+  },
+
+  {
+    value: "creative",
+    label: "Creative Intelligence"
+  },
+
+  {
+    value: "long",
+    label: "Long Context AI"
+  },
+
+  {
+    value: "web",
+    label: "Web Intelligence"
+  }
+];
+
+
+/* =========================================================
+   DOM HELPERS
+========================================================= */
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+
+/* =========================================================
+   DOM ELEMENTS
+========================================================= */
 
 const messageInput =
-    document.getElementById('messageInput');
+  $("messageInput");
 
-const sendBtn =
-    document.getElementById('sendBtn');
+const sendButton =
+  $("sendButton");
 
-const navItems =
-    document.querySelectorAll('.nav-item');
+const chatContainer =
+  $("chatContainer");
 
-const aiModel =
-    document.getElementById('aiModel');
+const modelSelector =
+  $("aiModel") ||
+  $("modelSelector") ||
+  $("modelSelect");
 
-const modelStatus =
-    document.getElementById('modelStatus');
+const plusMenu =
+  $("plusMenu");
 
-const plusBtn =
-    document.getElementById('plusBtn');
+const plusButton =
+  $("plusButton");
 
-const plusMenuOverlay =
-    document.getElementById('plusMenuOverlay');
+const fileInput =
+  $("fileInput");
 
-const closePlusBtn =
-    document.getElementById('closePlusBtn');
+const imageInput =
+  $("imageInput");
 
-const toolItems =
-    document.querySelectorAll('.tool-item');
-
-const galleryInput =
-    document.getElementById('galleryInput');
+const pdfInput =
+  $("pdfInput");
 
 const cameraInput =
-    document.getElementById('cameraInput');
+  $("cameraInput");
+
+const galleryInput =
+  $("galleryInput");
+
+const webSearchButton =
+  $("webSearchBtn");
 
 
-// ==========================================
-// HISTORY ELEMENTS
-// ==========================================
+/* =========================================================
+   STATE
+========================================================= */
 
-const historyBtn =
-    document.getElementById('historyBtn');
-
-const newChatBtn =
-    document.getElementById('newChatBtn');
-
-const historyOverlay =
-    document.getElementById('historyOverlay');
-
-const historyPanel =
-    document.getElementById('historyPanel');
-
-const closeHistoryBtn =
-    document.getElementById('closeHistoryBtn');
-
-const historyNewChatBtn =
-    document.getElementById('historyNewChatBtn');
-
-const historySearchInput =
-    document.getElementById('historySearchInput');
-
-const conversationList =
-    document.getElementById('conversationList');
-
-const clearAllHistoryBtn =
-    document.getElementById('clearAllHistoryBtn');
-
-
-// ==========================================
-// STATE
-// ==========================================
-
-let isWaitingForResponse = false;
+let selectedFile = null;
+let selectedFileType = null;
 
 let selectedImage = null;
+let selectedImageMimeType = null;
 
 let selectedPDF = null;
+let selectedPDFMimeType = null;
+let selectedPDFName = null;
 
-let pdfInput = null;
-
-
-// ==========================================
-// HISTORY STORAGE
-// ==========================================
-
-const HISTORY_STORAGE_KEY =
-    'infinity_ai_chat_history_v1';
-
-const CURRENT_CHAT_STORAGE_KEY =
-    'infinity_ai_current_chat_v1';
-
-let conversations = [];
-
-let currentConversationId = null;
+let isSending = false;
 
 
-// ==========================================
-// AI CAPABILITIES
-// ==========================================
+/* =========================================================
+   HISTORY
+========================================================= */
 
-const AI_CAPABILITIES = {
-
-    gemini: {
-        name: 'Infinity AI Core',
-        status: 'Infinity AI Core Online ✓',
-        provider: 'Gemini'
-    },
-
-    chatgpt: {
-        name: 'ChatGPT',
-        status: 'ChatGPT Online ✓',
-        provider: 'OpenAI'
-    },
-
-    groq: {
-        name: 'Groq',
-        status: 'Groq Online ✓',
-        provider: 'Groq'
-    },
-
-    deep: {
-        name: 'Deep Reasoning',
-        status: 'Deep Reasoning Online ✓',
-        provider: 'Gemini'
-    },
-
-    advanced: {
-        name: 'Advanced Assistant',
-        status: 'Advanced Assistant Online ✓',
-        provider: 'Gemini'
-    },
-
-    creative: {
-        name: 'Creative Intelligence',
-        status: 'Creative Intelligence Online ✓',
-        provider: 'Gemini'
-    },
-
-    long: {
-        name: 'Long Context AI',
-        status: 'Long Context AI Online ✓',
-        provider: 'Gemini'
-    },
-
-    web: {
-        name: 'Web Intelligence',
-        status: 'Web Intelligence Online ✓',
-        provider: 'Gemini'
-    }
-};
+const HISTORY_KEY =
+  "infinity_ai_chat_history";
 
 
-// ==========================================
-// BASIC UTILITY
-// ==========================================
-
-function scrollToBottom() {
-
-    if (!chatContainer) return;
-
-    chatContainer.scrollTop =
-        chatContainer.scrollHeight;
-}
-
-
-function removeWelcomeMessage() {
-
-    const welcome =
-        chatContainer?.querySelector(
-            '.welcome-message'
-        );
-
-    if (welcome) {
-        welcome.remove();
-    }
-}
-
-
-function escapeHtml(text) {
-
-    if (
-        text === null ||
-        text === undefined
-    ) {
-        return '';
-    }
-
-    return String(text)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
-
-// ==========================================
-// DATA URL -> BASE64
-// ==========================================
-
-function stripDataUrlPrefix(value) {
-
-    if (!value) {
-        return value;
-    }
-
-    const stringValue =
-        String(value);
-
-    const commaIndex =
-        stringValue.indexOf(',');
-
-    if (
-        stringValue.startsWith('data:') &&
-        commaIndex !== -1
-    ) {
-
-        return stringValue.substring(
-            commaIndex + 1
-        );
-    }
-
-    return stringValue;
-}
-
-
-// ==========================================
-// MARKDOWN PARSER
-// ==========================================
-
-function inlineMarkdown(text) {
-
-    let safe =
-        escapeHtml(text);
-
-
-    // Inline code
-    safe = safe.replace(
-        /`([^`\n]+)`/g,
-        '<code class="inline-code">$1</code>'
+function getHistory() {
+  try {
+    return JSON.parse(
+      localStorage.getItem(HISTORY_KEY) || "[]"
     );
-
-
-    // Bold
-    safe = safe.replace(
-        /\*\*(.+?)\*\*/g,
-        '<strong>$1</strong>'
-    );
-
-
-    safe = safe.replace(
-        /__(.+?)__/g,
-        '<strong>$1</strong>'
-    );
-
-
-    // Italic
-    safe = safe.replace(
-        /(^|[^*])\*([^*\n]+)\*(?!\*)/g,
-        '$1<em>$2</em>'
-    );
-
-
-    safe = safe.replace(
-        /(^|[^_])_([^_\n]+)_(?!_)/g,
-        '$1<em>$2</em>'
-    );
-
-
-    // Links
-    safe = safe.replace(
-        /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
-        '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
-    );
-
-
-    return safe;
+  } catch {
+    return [];
+  }
 }
 
 
-function markdownToHtml(markdown) {
-
-    if (
-        markdown === null ||
-        markdown === undefined
-    ) {
-        return '';
-    }
-
-
-    const text =
-        String(markdown)
-            .replace(/\r\n/g, '\n')
-            .replace(/\r/g, '\n');
-
-
-    const lines =
-        text.split('\n');
-
-
-    let html = '';
-
-    let inCodeBlock = false;
-
-    let codeLanguage = '';
-
-    let codeLines = [];
-
-    let inUnorderedList = false;
-
-    let inOrderedList = false;
-
-
-    function closeLists() {
-
-        if (inUnorderedList) {
-
-            html += '</ul>';
-
-            inUnorderedList = false;
-        }
-
-
-        if (inOrderedList) {
-
-            html += '</ol>';
-
-            inOrderedList = false;
-        }
-    }
-
-
-    function addCodeBlock() {
-
-        const code =
-            codeLines.join('\n');
-
-
-        const safeCode =
-            escapeHtml(code);
-
-
-        const language =
-            escapeHtml(
-                codeLanguage || 'code'
-            );
-
-
-        html += `
-            <div class="code-block">
-
-                <div class="code-header">
-
-                    <span class="code-language">
-                        ${language}
-                    </span>
-
-                    <button
-                        type="button"
-                        class="copy-code-btn"
-                    >
-                        📋 Copy
-                    </button>
-
-                </div>
-
-                <pre><code>${safeCode}</code></pre>
-
-            </div>
-        `;
-
-
-        codeLines = [];
-
-        codeLanguage = '';
-    }
-
-
-    for (
-        let i = 0;
-        i < lines.length;
-        i++
-    ) {
-
-        const line =
-            lines[i];
-
-
-        // CODE BLOCK
-        if (
-            line.trim().startsWith('```')
-        ) {
-
-            if (!inCodeBlock) {
-
-                closeLists();
-
-                inCodeBlock = true;
-
-                codeLanguage =
-                    line.trim()
-                        .substring(3)
-                        .trim() ||
-                    'code';
-
-                codeLines = [];
-
-            } else {
-
-                inCodeBlock = false;
-
-                addCodeBlock();
-            }
-
-            continue;
-        }
-
-
-        if (inCodeBlock) {
-
-            codeLines.push(line);
-
-            continue;
-        }
-
-
-        // EMPTY LINE
-        if (
-            line.trim() === ''
-        ) {
-
-            closeLists();
-
-            html +=
-                '<div class="md-space"></div>';
-
-            continue;
-        }
-
-
-        // HEADINGS
-        if (
-            /^###\s+/.test(line)
-        ) {
-
-            closeLists();
-
-            html += `
-                <h4>
-                    ${inlineMarkdown(
-                        line.replace(
-                            /^###\s+/,
-                            ''
-                        )
-                    )}
-                </h4>
-            `;
-
-            continue;
-        }
-
-
-        if (
-            /^##\s+/.test(line)
-        ) {
-
-            closeLists();
-
-            html += `
-                <h3>
-                    ${inlineMarkdown(
-                        line.replace(
-                            /^##\s+/,
-                            ''
-                        )
-                    )}
-                </h3>
-            `;
-
-            continue;
-        }
-
-
-        if (
-            /^#\s+/.test(line)
-        ) {
-
-            closeLists();
-
-            html += `
-                <h2>
-                    ${inlineMarkdown(
-                        line.replace(
-                            /^#\s+/,
-                            ''
-                        )
-                    )}
-                </h2>
-            `;
-
-            continue;
-        }
-
-
-        // UNORDERED LIST
-        const unordered =
-            line.match(
-                /^\s*[-*+]\s+(.+)$/
-            );
-
-
-        if (unordered) {
-
-            if (!inUnorderedList) {
-
-                closeLists();
-
-                html += '<ul>';
-
-                inUnorderedList = true;
-            }
-
-
-            html += `
-                <li>
-                    ${inlineMarkdown(
-                        unordered[1]
-                    )}
-                </li>
-            `;
-
-            continue;
-        }
-
-
-        // ORDERED LIST
-        const ordered =
-            line.match(
-                /^\s*\d+\.\s+(.+)$/
-            );
-
-
-        if (ordered) {
-
-            if (!inOrderedList) {
-
-                closeLists();
-
-                html += '<ol>';
-
-                inOrderedList = true;
-            }
-
-
-            html += `
-                <li>
-                    ${inlineMarkdown(
-                        ordered[1]
-                    )}
-                </li>
-            `;
-
-            continue;
-        }
-
-
-        // BLOCKQUOTE
-        if (
-            /^\s*>\s?/.test(line)
-        ) {
-
-            closeLists();
-
-            html += `
-                <blockquote>
-                    ${inlineMarkdown(
-                        line.replace(
-                            /^\s*>\s?/,
-                            ''
-                        )
-                    )}
-                </blockquote>
-            `;
-
-            continue;
-        }
-
-
-        // HORIZONTAL LINE
-        if (
-            /^\s*([-*_])\s*\1\s*\1\s*$/.test(line)
-        ) {
-
-            closeLists();
-
-            html += '<hr>';
-
-            continue;
-        }
-
-
-        // NORMAL PARAGRAPH
-        closeLists();
-
-        html += `
-            <p>
-                ${inlineMarkdown(line)}
-            </p>
-        `;
-    }
-
-
-    // unfinished code block
-    if (inCodeBlock) {
-
-        inCodeBlock = false;
-
-        addCodeBlock();
-    }
-
-
-    closeLists();
-
-
-    return html;
-}
-
-
-// ==========================================
-// COPY CODE
-// ==========================================
-
-async function copyCode(
-    code,
-    button
-) {
-
-    const decoded =
-        String(code || '')
-            .replace(/&quot;/g, '"')
-            .replace(/&#039;/g, "'")
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&amp;/g, '&');
-
-
-    try {
-
-        if (
-            navigator.clipboard &&
-            navigator.clipboard.writeText
-        ) {
-
-            await navigator.clipboard.writeText(
-                decoded
-            );
-
-        } else {
-
-            fallbackCopy(decoded);
-        }
-
-
-        showCopySuccess(button);
-
-    } catch (error) {
-
-        console.error(
-            'Copy failed:',
-            error
-        );
-
-        fallbackCopy(
-            decoded,
-            button
-        );
-    }
-}
-
-
-function fallbackCopy(
-    text,
-    button = null
-) {
-
-    const textarea =
-        document.createElement(
-            'textarea'
-        );
-
-
-    textarea.value =
-        text;
-
-
-    textarea.style.position =
-        'fixed';
-
-    textarea.style.opacity =
-        '0';
-
-
-    document.body.appendChild(
-        textarea
+function saveHistory(history) {
+  try {
+    localStorage.setItem(
+      HISTORY_KEY,
+      JSON.stringify(history)
     );
-
-
-    textarea.select();
-
-
-    try {
-
-        document.execCommand(
-            'copy'
-        );
-
-        showCopySuccess(button);
-
-    } catch (error) {
-
-        console.error(
-            'Fallback copy failed:',
-            error
-        );
-    }
-
-
-    textarea.remove();
-}
-
-
-function showCopySuccess(
-    button
-) {
-
-    if (!button) return;
-
-
-    const oldText =
-        button.textContent;
-
-
-    button.textContent =
-        '✓ Copied';
-
-
-    setTimeout(() => {
-
-        button.textContent =
-            oldText || '📋 Copy';
-
-    }, 1500);
-}
-
-
-// ==========================================
-// CODE COPY EVENT
-// ==========================================
-
-document.addEventListener(
-    'click',
-    event => {
-
-        const button =
-            event.target.closest(
-                '.copy-code-btn'
-            );
-
-
-        if (!button) return;
-
-
-        const codeElement =
-            button
-                .closest('.code-block')
-                ?.querySelector('pre code');
-
-
-        const code =
-            codeElement
-                ? codeElement.textContent
-                : '';
-
-
-        copyCode(
-            code,
-            button
-        );
-    }
-);
-
-
-// ==========================================
-// MESSAGE BUBBLE
-// ==========================================
-
-function addMessageBubble(
-    text,
-    type,
-    options = {}
-) {
-
-    removeWelcomeMessage();
-
-
-    const bubble =
-        document.createElement(
-            'div'
-        );
-
-
-    bubble.classList.add(
-        'message'
+  } catch (error) {
+    console.error(
+      "History save error:",
+      error
     );
-
-
-    if (type === 'user') {
-
-        bubble.classList.add(
-            'user-message'
-        );
-
-        bubble.textContent =
-            text || '';
-    }
-
-
-    else if (type === 'ai') {
-
-        bubble.classList.add(
-            'ai-message'
-        );
-
-
-        if (
-            options.markdown !== false
-        ) {
-
-            bubble.innerHTML =
-                markdownToHtml(
-                    text || ''
-                );
-
-        } else {
-
-            bubble.textContent =
-                text || '';
-        }
-    }
-
-
-    else if (type === 'loading') {
-
-        bubble.classList.add(
-            'ai-message',
-            'ai-loading'
-        );
-
-
-        bubble.innerHTML = `
-            <div class="typing-indicator">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        `;
-    }
-
-
-    else if (type === 'error') {
-
-        bubble.classList.add(
-            'error-message'
-        );
-
-        bubble.textContent =
-            text || '';
-    }
-
-
-    if (chatContainer) {
-
-        chatContainer.appendChild(
-            bubble
-        );
-    }
-
-
-    scrollToBottom();
-
-
-    return bubble;
+  }
 }
 
 
-// ==========================================
-// TYPING ANIMATION
-// ==========================================
+function addHistory(role, content, extra = {}) {
+  const history = getHistory();
 
-async function typeAIResponse(
-    bubble,
-    text
-) {
+  history.push({
+    role,
+    content,
+    time: new Date().toISOString(),
+    ...extra
+  });
 
-    if (!bubble) return;
-
-
-    bubble.classList.remove(
-        'ai-loading'
-    );
-
-
-    bubble.innerHTML = `
-        <div class="typing-content"></div>
-    `;
-
-
-    const content =
-        bubble.querySelector(
-            '.typing-content'
-        );
-
-
-    if (!content) {
-
-        bubble.innerHTML =
-            markdownToHtml(
-                text || ''
-            );
-
-        return;
-    }
-
-
-    const fullText =
-        String(text || '');
-
-
-    let speed = 14;
-
-
-    if (
-        fullText.length > 1200
-    ) {
-        speed = 5;
-    }
-
-
-    if (
-        fullText.length > 3000
-    ) {
-        speed = 2;
-    }
-
-
-    let current = '';
-
-
-    for (
-        let i = 0;
-        i < fullText.length;
-        i++
-    ) {
-
-        current +=
-            fullText[i];
-
-
-        content.textContent =
-            current;
-
-
-        scrollToBottom();
-
-
-        await new Promise(
-            resolve =>
-                setTimeout(
-                    resolve,
-                    speed
-                )
-        );
-    }
-
-
-    bubble.innerHTML =
-        markdownToHtml(
-            fullText
-        );
-
-
-    scrollToBottom();
+  saveHistory(history);
 }
 
 
-// ==========================================
-// REPLACE BUBBLE
-// ==========================================
+/* =========================================================
+   LOAD HISTORY
+========================================================= */
 
-function replaceBubble(
-    oldBubble,
-    text,
-    type
-) {
+function loadHistory() {
+  const history = getHistory();
 
-    if (!oldBubble) {
-        return null;
+  if (!chatContainer) {
+    return;
+  }
+
+  history.forEach(item => {
+    if (item.role === "user") {
+      addMessageToUI(
+        "user",
+        item.content,
+        false
+      );
     }
 
-
-    const newBubble =
-        document.createElement(
-            'div'
-        );
-
-
-    newBubble.classList.add(
-        'message'
-    );
-
-
-    if (type === 'user') {
-
-        newBubble.classList.add(
-            'user-message'
-        );
-
-        newBubble.textContent =
-            text || '';
+    if (item.role === "assistant") {
+      addMessageToUI(
+        "assistant",
+        item.content,
+        false,
+        item
+      );
     }
-
-
-    if (type === 'ai') {
-
-        newBubble.classList.add(
-            'ai-message'
-        );
-
-        newBubble.innerHTML =
-            markdownToHtml(
-                text || ''
-            );
-    }
-
-
-    if (type === 'error') {
-
-        newBubble.classList.add(
-            'error-message'
-        );
-
-        newBubble.textContent =
-            text || '';
-    }
-
-
-    oldBubble.replaceWith(
-        newBubble
-    );
-
-
-    scrollToBottom();
-
-
-    return newBubble;
+  });
 }
 
 
-// ==========================================
-// MODEL CAPABILITY
-// ==========================================
+/* =========================================================
+   SELECTED CAPABILITY
+========================================================= */
 
 function getSelectedCapability() {
 
-    if (!aiModel) {
-        return 'gemini';
-    }
+  if (!modelSelector) {
+    return "gemini";
+  }
+
+  const value =
+    String(
+      modelSelector.value || ""
+    )
+      .trim()
+      .toLowerCase();
+
+  const text =
+    String(
+      modelSelector.options?.[
+        modelSelector.selectedIndex
+      ]?.text || ""
+    )
+      .trim()
+      .toLowerCase();
 
 
-    const value =
-        String(
-            aiModel.value || 'gemini'
-        )
-            .trim()
-            .toLowerCase();
+  /* ChatGPT */
+
+  if (
+    value === "chatgpt" ||
+    value === "openai" ||
+    value.includes("chatgpt") ||
+    text.includes("chatgpt")
+  ) {
+    return "chatgpt";
+  }
 
 
-    // Direct known values
-    if (
-        AI_CAPABILITIES[value]
-    ) {
+  /* Groq */
 
-        return value;
-    }
-
-
-    // Extra protection if HTML uses
-    // labels instead of values.
-
-    if (
-        value.includes('chatgpt') ||
-        value.includes('openai')
-    ) {
-
-        return 'chatgpt';
-    }
+  if (
+    value === "groq" ||
+    value.includes("groq") ||
+    text.includes("groq")
+  ) {
+    return "groq";
+  }
 
 
-    if (
-        value.includes('groq')
-    ) {
+  /* Web Search */
 
-        return 'groq';
-    }
-
-
-    if (
-        value.includes('deep')
-    ) {
-
-        return 'deep';
-    }
+  if (
+    value === "websearch" ||
+    value === "web-search" ||
+    value === "web_search" ||
+    value.includes("websearch") ||
+    text.includes("web search")
+  ) {
+    return "websearch";
+  }
 
 
-    if (
-        value.includes('creative')
-    ) {
+  /* Everything else */
 
-        return 'creative';
-    }
-
-
-    if (
-        value.includes('long')
-    ) {
-
-        return 'long';
-    }
-
-
-    if (
-        value.includes('web')
-    ) {
-
-        return 'web';
-    }
-
-
-    if (
-        value.includes('advanced')
-    ) {
-
-        return 'advanced';
-    }
-
-
-    return 'gemini';
+  return "gemini";
 }
 
 
-// ==========================================
-// MODEL STATUS
-// ==========================================
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
 
-function updateModelStatus() {
+function escapeHTML(value) {
 
-    if (!modelStatus) {
-        return;
-    }
-
-
-    const capability =
-        getSelectedCapability();
-
-
-    const info =
-        AI_CAPABILITIES[
-            capability
-        ] ||
-        AI_CAPABILITIES.gemini;
-
-
-    modelStatus.textContent =
-        info.status;
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 
-if (aiModel) {
+/* =========================================================
+   MARKDOWN
+========================================================= */
 
-    aiModel.addEventListener(
-        'change',
-        updateModelStatus
-    );
-}
+function renderMarkdown(text) {
 
-
-// ==========================================
-// FILE -> DATA URL
-// ==========================================
-
-function readFileAsDataURL(file) {
-
-    return new Promise(
-        (resolve, reject) => {
-
-            const reader =
-                new FileReader();
+  let source =
+    String(text || "");
 
 
-            reader.onload =
-                () =>
-                    resolve(
-                        reader.result
-                    );
+  /* Protect code blocks */
 
+  const codeBlocks = [];
 
-            reader.onerror =
-                reject;
+  source =
+    source.replace(
+      /```([\w+-]*)\n?([\s\S]*?)```/g,
+      function (_, language, code) {
 
+        const index =
+          codeBlocks.length;
 
-            reader.readAsDataURL(
-                file
-            );
-        }
-    );
-}
+        codeBlocks.push({
+          language:
+            language || "code",
 
+          code:
+            code.trim()
+        });
 
-// ==========================================
-// PDF INPUT
-// ==========================================
-
-function createPDFInput() {
-
-    pdfInput =
-        document.getElementById(
-            'pdfInput'
-        );
-
-
-    if (!pdfInput) {
-
-        pdfInput =
-            document.createElement(
-                'input'
-            );
-
-
-        pdfInput.type =
-            'file';
-
-
-        pdfInput.id =
-            'pdfInput';
-
-
-        pdfInput.accept =
-            'application/pdf,.pdf';
-
-
-        pdfInput.hidden =
-            true;
-
-
-        document.body.appendChild(
-            pdfInput
-        );
-    }
-
-
-    pdfInput.removeEventListener(
-        'change',
-        handlePDFChange
+        return `___CODE_BLOCK_${index}___`;
+      }
     );
 
 
-    pdfInput.addEventListener(
-        'change',
-        handlePDFChange
+  /* Escape HTML */
+
+  source =
+    escapeHTML(source);
+
+
+  /* Bold */
+
+  source =
+    source.replace(
+      /\*\*(.*?)\*\*/g,
+      "<strong>$1</strong>"
     );
-}
 
 
-// ==========================================
-// PDF PREVIEW
-// ==========================================
+  /* Italic */
 
-function removeExistingPDFPreview() {
+  source =
+    source.replace(
+      /(^|[^\*])\*([^\*]+)\*(?!\*)/g,
+      "$1<em>$2</em>"
+    );
 
-    const oldPreview =
-        document.querySelector(
-            '.selected-pdf-preview'
+
+  /* Inline code */
+
+  source =
+    source.replace(
+      /`([^`]+)`/g,
+      "<code>$1</code>"
+    );
+
+
+  /* Headings */
+
+  source =
+    source.replace(
+      /^### (.*)$/gm,
+      "<h4>$1</h4>"
+    );
+
+  source =
+    source.replace(
+      /^## (.*)$/gm,
+      "<h3>$1</h3>"
+    );
+
+  source =
+    source.replace(
+      /^# (.*)$/gm,
+      "<h2>$1</h2>"
+    );
+
+
+  /* Unordered list */
+
+  source =
+    source.replace(
+      /^[\-\*] (.*)$/gm,
+      "<li>$1</li>"
+    );
+
+
+  source =
+    source.replace(
+      /(<li>.*<\/li>)/gs,
+      "<ul>$1</ul>"
+    );
+
+
+  /* Line breaks */
+
+  source =
+    source.replace(
+      /\n/g,
+      "<br>"
+    );
+
+
+  /* Restore code blocks */
+
+  codeBlocks.forEach(
+    (block, index) => {
+
+      const safeCode =
+        escapeHTML(
+          block.code
         );
 
+      const codeHTML = `
+        <div class="code-block">
 
-    if (oldPreview) {
-        oldPreview.remove();
-    }
-}
+          <div class="code-header">
 
+            <span>
+              ${escapeHTML(
+                block.language
+              )}
+            </span>
 
-function removeSelectedPDF() {
+            <button
+              type="button"
+              class="copy-code-btn"
+              data-code="${escapeHTML(
+                block.code
+              )}"
+            >
+              Copy
+            </button>
 
-    selectedPDF = null;
+          </div>
 
-
-    removeExistingPDFPreview();
-
-
-    if (pdfInput) {
-        pdfInput.value = '';
-    }
-
-
-    messageInput?.focus();
-}
-
-
-function createPDFPreview(file) {
-
-    removeExistingPDFPreview();
-
-
-    const preview =
-        document.createElement(
-            'div'
-        );
-
-
-    preview.className =
-        'selected-pdf-preview';
-
-
-    preview.innerHTML = `
-        <div class="pdf-preview-icon">
-            📄
-        </div>
-
-        <div class="pdf-preview-info">
-
-            <strong>
-                ${escapeHtml(
-                    file.name
-                )}
-            </strong>
-
-            <small>
-                PDF selected
-            </small>
+          <pre><code>${safeCode}</code></pre>
 
         </div>
+      `;
 
-        <button
-            type="button"
-            class="remove-pdf-btn"
-            aria-label="Remove PDF"
-        >
-            ×
-        </button>
-    `;
-
-
-    const inputArea =
-        document.querySelector(
-            '.input-area'
-        );
-
-
-    if (inputArea) {
-
-        inputArea.parentNode.insertBefore(
-            preview,
-            inputArea
+      source =
+        source.replace(
+          `___CODE_BLOCK_${index}___`,
+          codeHTML
         );
     }
+  );
 
 
-    const removeBtn =
-        preview.querySelector(
-            '.remove-pdf-btn'
-        );
-
-
-    if (removeBtn) {
-
-        removeBtn.addEventListener(
-            'click',
-            removeSelectedPDF
-        );
-    }
+  return source;
 }
 
 
-async function handlePDFChange(
-    event
-) {
+/* =========================================================
+   WEB SOURCES
+========================================================= */
 
-    const file =
-        event.target.files?.[0];
+function renderSources(sources) {
+
+  if (
+    !Array.isArray(sources) ||
+    sources.length === 0
+  ) {
+    return "";
+  }
 
 
-    if (!file) return;
+  const unique = [];
 
+  sources.forEach(source => {
 
     if (
-        file.type !==
-            'application/pdf' &&
-        !file.name
-            .toLowerCase()
-            .endsWith('.pdf')
+      !source ||
+      !source.url
     ) {
-
-        alert(
-            'Please select a PDF file.'
-        );
-
-
-        event.target.value =
-            '';
-
-
-        return;
+      return;
     }
-
-
-    try {
-
-        const dataUrl =
-            await readFileAsDataURL(
-                file
-            );
-
-
-        selectedPDF = {
-
-            file,
-
-            dataUrl,
-
-            name:
-                file.name,
-
-            mimeType:
-                file.type ||
-                'application/pdf'
-        };
-
-
-        createPDFPreview(
-            file
-        );
-
-
-        messageInput?.focus();
-
-    } catch (error) {
-
-        console.error(
-            'PDF read error:',
-            error
-        );
-
-
-        alert(
-            'Could not read the PDF file.'
-        );
-    }
-}
-
-
-// ==========================================
-// IMAGE PREVIEW
-// ==========================================
-
-function createImagePreview(
-    file
-) {
-
-    removeExistingImagePreview();
-
-
-    const preview =
-        document.createElement(
-            'div'
-        );
-
-
-    preview.className =
-        'selected-image-preview';
-
-
-    const imageUrl =
-        URL.createObjectURL(
-            file
-        );
-
-
-    preview.innerHTML = `
-        <img
-            src="${imageUrl}"
-            alt="Selected image"
-        >
-
-        <div class="image-preview-info">
-
-            <strong>
-                ${escapeHtml(
-                    file.name
-                )}
-            </strong>
-
-            <small>
-                Image selected
-            </small>
-
-        </div>
-
-        <button
-            type="button"
-            class="remove-image-btn"
-            aria-label="Remove image"
-        >
-            ×
-        </button>
-    `;
-
-
-    const inputArea =
-        document.querySelector(
-            '.input-area'
-        );
-
-
-    if (inputArea) {
-
-        inputArea.parentNode.insertBefore(
-            preview,
-            inputArea
-        );
-    }
-
-
-    const removeBtn =
-        preview.querySelector(
-            '.remove-image-btn'
-        );
-
-
-    if (removeBtn) {
-
-        removeBtn.addEventListener(
-            'click',
-            removeSelectedImage
-        );
-    }
-}
-
-
-function removeExistingImagePreview() {
-
-    const oldPreview =
-        document.querySelector(
-            '.selected-image-preview'
-        );
-
-
-    if (oldPreview) {
-        oldPreview.remove();
-    }
-}
-
-
-function removeSelectedImage() {
-
-    selectedImage = null;
-
-
-    removeExistingImagePreview();
-
-
-    if (galleryInput) {
-        galleryInput.value = '';
-    }
-
-
-    if (cameraInput) {
-        cameraInput.value = '';
-    }
-
-
-    messageInput?.focus();
-}
-
-
-// ==========================================
-// HISTORY
-// ==========================================
-
-function generateConversationId() {
 
     if (
-        window.crypto &&
-        crypto.randomUUID
-    ) {
-
-        return crypto.randomUUID();
-    }
-
-
-    return (
-        Date.now().toString() +
-        '-' +
-        Math.random()
-            .toString(36)
-            .slice(2)
-    );
-}
-
-
-function saveHistory() {
-
-    try {
-
-        localStorage.setItem(
-            HISTORY_STORAGE_KEY,
-            JSON.stringify(
-                conversations
-            )
-        );
-
-
-        if (
-            currentConversationId
-        ) {
-
-            localStorage.setItem(
-                CURRENT_CHAT_STORAGE_KEY,
-                currentConversationId
-            );
-        }
-
-    } catch (error) {
-
-        console.error(
-            'Could not save chat history:',
-            error
-        );
-    }
-}
-
-
-function loadHistory() {
-
-    try {
-
-        const stored =
-            localStorage.getItem(
-                HISTORY_STORAGE_KEY
-            );
-
-
-        if (stored) {
-
-            const parsed =
-                JSON.parse(
-                    stored
-                );
-
-
-            if (
-                Array.isArray(parsed)
-            ) {
-
-                conversations =
-                    parsed;
-
-            } else {
-
-                conversations =
-                    [];
-            }
-
-        } else {
-
-            conversations =
-                [];
-        }
-
-
-        currentConversationId =
-            localStorage.getItem(
-                CURRENT_CHAT_STORAGE_KEY
-            );
-
-    } catch (error) {
-
-        console.error(
-            'Could not load chat history:',
-            error
-        );
-
-
-        conversations =
-            [];
-
-
-        currentConversationId =
-            null;
-    }
-}
-
-
-function getCurrentConversation() {
-
-    if (
-        !currentConversationId
-    ) {
-        return null;
-    }
-
-
-    return conversations.find(
-        conversation =>
-            conversation.id ===
-            currentConversationId
-    ) || null;
-}
-
-
-function createConversation() {
-
-    const now =
-        Date.now();
-
-
-    const conversation = {
-
-        id:
-            generateConversationId(),
-
-        title:
-            'New Chat',
-
-        createdAt:
-            now,
-
-        updatedAt:
-            now,
-
-        messages:
-            []
-    };
-
-
-    conversations.push(
-        conversation
-    );
-
-
-    currentConversationId =
-        conversation.id;
-
-
-    saveHistory();
-
-
-    renderConversationList();
-
-
-    return conversation;
-}
-
-
-function ensureCurrentConversation() {
-
-    let conversation =
-        getCurrentConversation();
-
-
-    if (!conversation) {
-
-        conversation =
-            createConversation();
-    }
-
-
-    return conversation;
-}
-
-
-function makeConversationTitle(
-    text
-) {
-
-    if (!text) {
-        return 'New Chat';
-    }
-
-
-    const cleanText =
-        String(text)
-            .replace(/\s+/g, ' ')
-            .trim();
-
-
-    if (!cleanText) {
-        return 'New Chat';
-    }
-
-
-    if (
-        cleanText.length <= 42
-    ) {
-
-        return cleanText;
-    }
-
-
-    return (
-        cleanText.substring(
-            0,
-            42
-        ) + '…'
-    );
-}
-
-
-function saveChatMessage(
-    role,
-    text
-) {
-
-    const conversation =
-        ensureCurrentConversation();
-
-
-    if (
-        !Array.isArray(
-            conversation.messages
-        )
-    ) {
-
-        conversation.messages =
-            [];
-    }
-
-
-    conversation.messages.push({
-
-        role,
-
-        text:
-            String(text || ''),
-
-        createdAt:
-            Date.now()
-    });
-
-
-    if (
-        role === 'user' &&
-        (
-            !conversation.title ||
-            conversation.title ===
-                'New Chat'
-        )
-    ) {
-
-        conversation.title =
-            makeConversationTitle(
-                text
-            );
-    }
-
-
-    conversation.updatedAt =
-        Date.now();
-
-
-    saveHistory();
-
-
-    renderConversationList();
-}
-
-
-function clearChatView() {
-
-    if (!chatContainer) return;
-
-    chatContainer.innerHTML =
-        '';
-}
-
-
-function showWelcomeMessage() {
-
-    if (!chatContainer) return;
-
-
-    chatContainer.innerHTML = `
-        <div class="welcome-message">
-
-            <div class="welcome-icon">
-                ✦
-            </div>
-
-            <h1>
-                Welcome to Infinity AI
-            </h1>
-
-            <p>
-                Your intelligent AI assistant is ready.
-            </p>
-
-        </div>
-    `;
-}
-
-
-function renderConversationMessages(
-    conversation
-) {
-
-    clearChatView();
-
-
-    if (
-        !conversation ||
-        !Array.isArray(
-            conversation.messages
-        ) ||
-        conversation.messages.length ===
-            0
-    ) {
-
-        showWelcomeMessage();
-
-        return;
-    }
-
-
-    conversation.messages.forEach(
-        message => {
-
-            let type =
-                'ai';
-
-
-            if (
-                message.role ===
-                'user'
-            ) {
-
-                type =
-                    'user';
-            }
-
-
-            if (
-                message.role ===
-                'error'
-            ) {
-
-                type =
-                    'error';
-            }
-
-
-            addMessageBubble(
-                message.text || '',
-                type
-            );
-        }
-    );
-
-
-    scrollToBottom();
-}
-
-
-function loadConversation(
-    conversationId
-) {
-
-    const conversation =
-        conversations.find(
-            item =>
-                item.id ===
-                conversationId
-        );
-
-
-    if (!conversation) {
-        return;
-    }
-
-
-    currentConversationId =
-        conversation.id;
-
-
-    saveHistory();
-
-
-    renderConversationMessages(
-        conversation
-    );
-
-
-    closeHistory();
-
-
-    messageInput?.focus();
-}
-
-
-function deleteConversation(
-    conversationId
-) {
-
-    const index =
-        conversations.findIndex(
-            conversation =>
-                conversation.id ===
-                conversationId
-        );
-
-
-    if (index === -1) {
-        return;
-    }
-
-
-    conversations.splice(
-        index,
-        1
-    );
-
-
-    if (
-        currentConversationId ===
-        conversationId
-    ) {
-
-        if (
-            conversations.length > 0
-        ) {
-
-            conversations.sort(
-                (a, b) =>
-                    (b.updatedAt || 0) -
-                    (a.updatedAt || 0)
-            );
-
-
-            currentConversationId =
-                conversations[0].id;
-
-
-            renderConversationMessages(
-                conversations[0]
-            );
-
-        } else {
-
-            currentConversationId =
-                null;
-
-
-            localStorage.removeItem(
-                CURRENT_CHAT_STORAGE_KEY
-            );
-
-
-            showWelcomeMessage();
-        }
-    }
-
-
-    saveHistory();
-
-
-    renderConversationList();
-}
-
-
-function startNewChat() {
-
-    removeSelectedImage();
-
-    removeSelectedPDF();
-
-
-    currentConversationId =
-        null;
-
-
-    localStorage.removeItem(
-        CURRENT_CHAT_STORAGE_KEY
-    );
-
-
-    clearChatView();
-
-
-    showWelcomeMessage();
-
-
-    closeHistory();
-
-
-    if (messageInput) {
-        messageInput.value = '';
-        messageInput.focus();
-    }
-
-
-    renderConversationList();
-}
-
-
-// ==========================================
-// HISTORY LIST
-// ==========================================
-
-function renderConversationList(
-    filter = ''
-) {
-
-    if (!conversationList) {
-        return;
-    }
-
-
-    const oldItems =
-        conversationList.querySelectorAll(
-            '.conversation-item'
-        );
-
-
-    oldItems.forEach(
+      unique.some(
         item =>
-            item.remove()
-    );
-
-
-    const emptyHistory =
-        document.getElementById(
-            'emptyHistory'
-        );
-
-
-    let sorted =
-        [...conversations].sort(
-            (a, b) =>
-                (b.updatedAt || 0) -
-                (a.updatedAt || 0)
-        );
-
-
-    const search =
-        String(filter || '')
-            .trim()
-            .toLowerCase();
-
-
-    if (search) {
-
-        sorted =
-            sorted.filter(
-                conversation => {
-
-                    const title =
-                        String(
-                            conversation.title ||
-                            ''
-                        )
-                            .toLowerCase();
-
-
-                    const messages =
-                        Array.isArray(
-                            conversation.messages
-                        )
-                            ? conversation.messages
-                                .map(
-                                    message =>
-                                        message.text ||
-                                        ''
-                                )
-                                .join(' ')
-                                .toLowerCase()
-                            : '';
-
-
-                    return (
-                        title.includes(
-                            search
-                        ) ||
-                        messages.includes(
-                            search
-                        )
-                    );
-                }
-            );
-    }
-
-
-    if (
-        sorted.length === 0
+          item.url === source.url
+      )
     ) {
-
-        if (emptyHistory) {
-
-            emptyHistory.style.display =
-                'flex';
-
-
-            if (search) {
-
-                emptyHistory.innerHTML = `
-                    <div>🔍</div>
-                    <strong>No matching chats</strong>
-                    <small>Try another search.</small>
-                `;
-
-            } else {
-
-                emptyHistory.innerHTML = `
-                    <div>💬</div>
-                    <strong>No conversations yet</strong>
-                    <small>Your chats will appear here automatically.</small>
-                `;
-            }
-        }
-
-
-        return;
+      return;
     }
 
-
-    if (emptyHistory) {
-
-        emptyHistory.style.display =
-            'none';
-    }
+    unique.push(source);
+  });
 
 
-    sorted.forEach(
-        conversation => {
-
-            const item =
-                document.createElement(
-                    'div'
-                );
+  if (!unique.length) {
+    return "";
+  }
 
 
-            item.className =
-                'conversation-item';
+  const html =
+    unique
+      .slice(0, 8)
+      .map(
+        source => {
 
-
-            if (
-                conversation.id ===
-                currentConversationId
-            ) {
-
-                item.classList.add(
-                    'active'
-                );
-            }
-
-
-            const title =
-                escapeHtml(
-                    conversation.title ||
-                    'New Chat'
-                );
-
-
-            const messageCount =
-                Array.isArray(
-                    conversation.messages
-                )
-                    ? conversation.messages.length
-                    : 0;
-
-
-            const timeText =
-                formatHistoryTime(
-                    conversation.updatedAt
-                );
-
-
-            item.innerHTML = `
-                <button
-                    type="button"
-                    class="conversation-main"
-                    data-conversation-id="${escapeHtml(
-                        conversation.id
-                    )}"
-                >
-
-                    <span class="conversation-icon">
-                        💬
-                    </span>
-
-                    <span class="conversation-details">
-
-                        <strong>
-                            ${title}
-                        </strong>
-
-                        <small>
-                            ${messageCount}
-                            message${messageCount === 1 ? '' : 's'}
-                            •
-                            ${timeText}
-                        </small>
-
-                    </span>
-
-                </button>
-
-                <button
-                    type="button"
-                    class="conversation-delete"
-                    data-delete-id="${escapeHtml(
-                        conversation.id
-                    )}"
-                    aria-label="Delete conversation"
-                    title="Delete chat"
-                >
-                    🗑️
-                </button>
-            `;
-
-
-            conversationList.appendChild(
-                item
+          const title =
+            escapeHTML(
+              source.title ||
+              "Web Source"
             );
+
+          const url =
+            escapeHTML(
+              source.url
+            );
+
+          return `
+            <a
+              class="web-source"
+              href="${url}"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              🔗 ${title}
+            </a>
+          `;
         }
-    );
+      )
+      .join("");
+
+
+  return `
+    <div class="web-sources">
+
+      <div class="web-sources-title">
+        🌐 Sources
+      </div>
+
+      ${html}
+
+    </div>
+  `;
 }
 
 
-function formatHistoryTime(
-    timestamp
+/* =========================================================
+   ADD MESSAGE TO UI
+========================================================= */
+
+function addMessageToUI(
+  role,
+  text,
+  save = true,
+  meta = {}
 ) {
 
-    if (!timestamp) {
-        return '';
-    }
+  if (!chatContainer) {
+    return null;
+  }
 
 
-    const date =
-        new Date(timestamp);
+  const messageElement =
+    document.createElement("div");
 
 
-    if (
-        Number.isNaN(
-            date.getTime()
-        )
-    ) {
-
-        return '';
-    }
+  messageElement.className =
+    `message ${role}-message`;
 
 
-    const now =
-        new Date();
+  const avatar =
+    role === "user"
+      ? "👤"
+      : "🤖";
 
 
-    const sameDay =
-        date.getFullYear() ===
-            now.getFullYear() &&
-        date.getMonth() ===
-            now.getMonth() &&
-        date.getDate() ===
-            now.getDate();
+  let contentHTML =
+    role === "assistant"
+      ? renderMarkdown(text)
+      : escapeHTML(text)
+          .replace(
+            /\n/g,
+            "<br>"
+          );
 
 
-    if (sameDay) {
+  /* Web sources */
 
-        return date.toLocaleTimeString(
-            [],
-            {
-                hour: 'numeric',
-                minute: '2-digit'
-            }
-        );
-    }
-
-
-    const yesterday =
-        new Date(now);
+  if (
+    role === "assistant" &&
+    Array.isArray(meta.sources)
+  ) {
+    contentHTML +=
+      renderSources(
+        meta.sources
+      );
+  }
 
 
-    yesterday.setDate(
-        yesterday.getDate() - 1
+  messageElement.innerHTML = `
+    <div class="message-avatar">
+      ${avatar}
+    </div>
+
+    <div class="message-content">
+      ${contentHTML}
+    </div>
+  `;
+
+
+  chatContainer.appendChild(
+    messageElement
+  );
+
+
+  scrollToBottom();
+
+
+  if (save) {
+
+    addHistory(
+      role,
+      text,
+      {
+        provider:
+          meta.provider || "",
+
+        model:
+          meta.model || "",
+
+        capability:
+          meta.capability || "",
+
+        sources:
+          meta.sources || []
+      }
     );
+  }
 
 
-    const isYesterday =
-        date.getFullYear() ===
-            yesterday.getFullYear() &&
-        date.getMonth() ===
-            yesterday.getMonth() &&
-        date.getDate() ===
-            yesterday.getDate();
-
-
-    if (isYesterday) {
-
-        return 'Yesterday';
-    }
-
-
-    return date.toLocaleDateString(
-        [],
-        {
-            day: 'numeric',
-            month: 'short'
-        }
-    );
+  return messageElement;
 }
 
 
-// ==========================================
-// HISTORY OPEN / CLOSE
-// ==========================================
+/* =========================================================
+   SCROLL
+========================================================= */
 
-function openHistory() {
+function scrollToBottom() {
 
-    if (!historyOverlay) {
-        return;
-    }
+  if (!chatContainer) {
+    return;
+  }
 
+  setTimeout(
+    () => {
 
-    historyOverlay.classList.add(
-        'show'
-    );
+      chatContainer.scrollTop =
+        chatContainer.scrollHeight;
 
-
-    historyOverlay.setAttribute(
-        'aria-hidden',
-        'false'
-    );
-
-
-    renderConversationList(
-        historySearchInput?.value ||
-        ''
-    );
-
-
-    setTimeout(
-        () => {
-            historySearchInput?.focus();
-        },
-        100
-    );
+    },
+    20
+  );
 }
 
 
-function closeHistory() {
+/* =========================================================
+   TYPING INDICATOR
+========================================================= */
 
-    if (!historyOverlay) {
-        return;
-    }
+function showTyping() {
+
+  if (!chatContainer) {
+    return null;
+  }
 
 
-    historyOverlay.classList.remove(
-        'show'
-    );
+  removeTyping();
 
 
-    historyOverlay.setAttribute(
-        'aria-hidden',
-        'true'
-    );
+  const typing =
+    document.createElement("div");
+
+
+  typing.id =
+    "infinityTyping";
+
+
+  typing.className =
+    "message assistant-message typing-message";
+
+
+  typing.innerHTML = `
+    <div class="message-avatar">
+      🤖
+    </div>
+
+    <div class="message-content typing-content">
+
+      <span></span>
+      <span></span>
+      <span></span>
+
+    </div>
+  `;
+
+
+  chatContainer.appendChild(
+    typing
+  );
+
+
+  scrollToBottom();
+
+
+  return typing;
 }
 
 
-// ==========================================
-// HISTORY EVENTS
-// ==========================================
+function removeTyping() {
 
-if (historyBtn) {
+  const typing =
+    $("infinityTyping");
 
-    historyBtn.addEventListener(
-        'click',
-        openHistory
-    );
+  if (typing) {
+    typing.remove();
+  }
 }
 
 
-if (newChatBtn) {
-
-    newChatBtn.addEventListener(
-        'click',
-        startNewChat
-    );
-}
-
-
-if (closeHistoryBtn) {
-
-    closeHistoryBtn.addEventListener(
-        'click',
-        closeHistory
-    );
-}
-
-
-if (historyNewChatBtn) {
-
-    historyNewChatBtn.addEventListener(
-        'click',
-        startNewChat
-    );
-}
-
-
-if (historySearchInput) {
-
-    historySearchInput.addEventListener(
-        'input',
-        () => {
-
-            renderConversationList(
-                historySearchInput.value
-            );
-        }
-    );
-}
-
-
-if (conversationList) {
-
-    conversationList.addEventListener(
-        'click',
-        event => {
-
-            const deleteButton =
-                event.target.closest(
-                    '[data-delete-id]'
-                );
-
-
-            if (deleteButton) {
-
-                event.stopPropagation();
-
-
-                const id =
-                    deleteButton.dataset
-                        .deleteId;
-
-
-                const conversation =
-                    conversations.find(
-                        item =>
-                            item.id ===
-                            id
-                    );
-
-
-                if (conversation) {
-
-                    const confirmed =
-                        confirm(
-                            `Delete "${conversation.title || 'this chat'}"?`
-                        );
-
-
-                    if (confirmed) {
-
-                        deleteConversation(
-                            id
-                        );
-                    }
-                }
-
-
-                return;
-            }
-
-
-            const conversationButton =
-                event.target.closest(
-                    '[data-conversation-id]'
-                );
-
-
-            if (
-                conversationButton
-            ) {
-
-                const id =
-                    conversationButton
-                        .dataset
-                        .conversationId;
-
-
-                loadConversation(
-                    id
-                );
-            }
-        }
-    );
-}
-
-
-if (clearAllHistoryBtn) {
-
-    clearAllHistoryBtn.addEventListener(
-        'click',
-        () => {
-
-            if (
-                conversations.length ===
-                0
-            ) {
-
-                alert(
-                    'There are no chats to clear.'
-                );
-
-                return;
-            }
-
-
-            const confirmed =
-                confirm(
-                    'Are you sure you want to delete all chat history?'
-                );
-
-
-            if (!confirmed) {
-                return;
-            }
-
-
-            conversations = [];
-
-            currentConversationId =
-                null;
-
-
-            localStorage.removeItem(
-                HISTORY_STORAGE_KEY
-            );
-
-
-            localStorage.removeItem(
-                CURRENT_CHAT_STORAGE_KEY
-            );
-
-
-            clearChatView();
-
-
-            showWelcomeMessage();
-
-
-            renderConversationList();
-
-
-            closeHistory();
-
-
-            messageInput?.focus();
-        }
-    );
-}
-
-
-// ==========================================
-// SEND MESSAGE
-// ==========================================
+/* =========================================================
+   SEND MESSAGE
+========================================================= */
 
 async function sendMessage() {
 
-    if (isWaitingForResponse) {
-        return;
-    }
+  if (isSending) {
+    return;
+  }
 
 
-    const text =
-        messageInput.value.trim();
+  if (!messageInput) {
+    return;
+  }
 
 
-    if (
-        !text &&
-        !selectedImage &&
-        !selectedPDF
-    ) {
-
-        return;
-    }
+  const userMessage =
+    messageInput.value.trim();
 
 
-    isWaitingForResponse =
-        true;
+  if (
+    !userMessage &&
+    !selectedImage &&
+    !selectedPDF
+  ) {
+    return;
+  }
 
 
-    if (sendBtn) {
-        sendBtn.disabled =
-            true;
-    }
+  isSending = true;
 
 
-    // ======================================
-    // GET SELECTED AI CAPABILITY
-    // ======================================
-
-    const capability =
-        getSelectedCapability();
+  if (sendButton) {
+    sendButton.disabled =
+      true;
+  }
 
 
-    console.log(
-        '🧠 Selected capability:',
-        capability
+  /* User UI */
+
+  if (userMessage) {
+
+    addMessageToUI(
+      "user",
+      userMessage,
+      true
     );
+  }
 
 
-    // ======================================
-    // USER MESSAGE
-    // ======================================
+  messageInput.value = "";
 
-    let visibleUserMessage =
-        text;
 
+  /* Selected capability */
+
+  const selectedCapability =
+    getSelectedCapability();
+
+
+  console.log(
+    "🎯 Selected capability:",
+    selectedCapability
+  );
+
+
+  /* Loading */
+
+  showTyping();
+
+
+  try {
+
+    const payload = {
+      message:
+        userMessage,
+
+      capability:
+        selectedCapability
+    };
+
+
+    /* =========================
+       IMAGE
+    ========================= */
 
     if (selectedImage) {
 
-        const imageText =
-            `📷 Image: ${selectedImage.name}`;
+      payload.image =
+        selectedImage;
 
-
-        visibleUserMessage =
-            visibleUserMessage
-                ? `${imageText}\n${visibleUserMessage}`
-                : imageText;
+      payload.imageMimeType =
+        selectedImageMimeType;
     }
 
+
+    /* =========================
+       PDF
+    ========================= */
 
     if (selectedPDF) {
 
-        const pdfText =
-            `📄 PDF: ${selectedPDF.name}`;
+      payload.pdf =
+        selectedPDF;
 
+      payload.pdfMimeType =
+        selectedPDFMimeType;
 
-        visibleUserMessage =
-            visibleUserMessage
-                ? `${pdfText}\n${visibleUserMessage}`
-                : pdfText;
+      payload.fileName =
+        selectedPDFName;
     }
 
 
-    addMessageBubble(
-        visibleUserMessage,
-        'user'
+    /* =========================
+       API REQUEST
+    ========================= */
+
+    const response =
+      await fetch(
+        API_URL,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify(
+              payload
+            )
+        }
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        data?.error ||
+        "AI request failed."
+      );
+    }
+
+
+    if (!data?.success) {
+
+      throw new Error(
+        data?.error ||
+        "AI service failed."
+      );
+    }
+
+
+    console.log(
+      "✅ Provider:",
+      data.provider
+    );
+
+    console.log(
+      "✅ Model:",
+      data.model
+    );
+
+    console.log(
+      "✅ Capability:",
+      data.capability
     );
 
 
-    saveChatMessage(
-        'user',
-        visibleUserMessage
+    removeTyping();
+
+
+    /* =========================
+       AI RESPONSE
+    ========================= */
+
+    addMessageToUI(
+      "assistant",
+      data.reply ||
+        "No response received.",
+      true,
+      {
+        provider:
+          data.provider,
+
+        model:
+          data.model,
+
+        capability:
+          data.capability,
+
+        sources:
+          data.sources || []
+      }
     );
 
 
-    messageInput.value =
-        '';
+    /* Clear selected files */
+
+    clearSelectedFiles();
 
 
-    // ======================================
-    // LOADING
-    // ======================================
+  } catch (error) {
 
-    const loadingBubble =
-        addMessageBubble(
-            '',
-            'loading'
+    console.error(
+      "❌ AI Error:",
+      error
+    );
+
+
+    removeTyping();
+
+
+    addMessageToUI(
+      "assistant",
+      "⚠️ AI সার্ভিসে সমস্যা হয়েছে। পরে আবার চেষ্টা করুন."
+    );
+
+
+  } finally {
+
+    isSending =
+      false;
+
+    if (sendButton) {
+      sendButton.disabled =
+        false;
+    }
+
+    messageInput.focus();
+  }
+}
+
+
+/* =========================================================
+   ENTER TO SEND
+========================================================= */
+
+if (messageInput) {
+
+  messageInput.addEventListener(
+    "keydown",
+    event => {
+
+      if (
+        event.key === "Enter" &&
+        !event.shiftKey
+      ) {
+
+        event.preventDefault();
+
+        sendMessage();
+      }
+    }
+  );
+}
+
+
+/* =========================================================
+   SEND BUTTON
+========================================================= */
+
+if (sendButton) {
+
+  sendButton.addEventListener(
+    "click",
+    sendMessage
+  );
+}
+
+
+/* =========================================================
+   MODEL SELECTOR
+========================================================= */
+
+if (modelSelector) {
+
+  modelSelector.addEventListener(
+    "change",
+    () => {
+
+      const capability =
+        getSelectedCapability();
+
+      console.log(
+        "🤖 Model changed:",
+        capability
+      );
+
+    }
+  );
+}
+
+
+/* =========================================================
+   WEB SEARCH BUTTON
+========================================================= */
+
+if (webSearchButton) {
+
+  webSearchButton.addEventListener(
+    "click",
+    () => {
+
+      if (modelSelector) {
+
+        const option =
+          Array.from(
+            modelSelector.options
+          ).find(
+            item =>
+              item.value ===
+              "websearch"
+          );
+
+
+        if (option) {
+
+          modelSelector.value =
+            "websearch";
+
+        }
+      }
+
+
+      console.log(
+        "🌐 Web Search enabled"
+      );
+
+
+      /* Close plus menu */
+
+      if (plusMenu) {
+        plusMenu.classList.remove(
+          "active"
         );
+      }
+
+    }
+  );
+}
+
+
+/* =========================================================
+   PLUS MENU
+========================================================= */
+
+if (plusButton && plusMenu) {
+
+  plusButton.addEventListener(
+    "click",
+    event => {
+
+      event.stopPropagation();
+
+      plusMenu.classList.toggle(
+        "active"
+      );
+    }
+  );
+
+
+  document.addEventListener(
+    "click",
+    event => {
+
+      if (
+        !plusMenu.contains(event.target) &&
+        event.target !== plusButton
+      ) {
+
+        plusMenu.classList.remove(
+          "active"
+        );
+      }
+    }
+  );
+}
+
+
+/* =========================================================
+   FILE TO BASE64
+========================================================= */
+
+function fileToBase64(file) {
+
+  return new Promise(
+    (resolve, reject) => {
+
+      const reader =
+        new FileReader();
+
+
+      reader.onload = () => {
+
+        const result =
+          String(
+            reader.result || ""
+          );
+
+
+        /* Remove data URL prefix */
+
+        const base64 =
+          result.includes(",")
+            ? result.split(",")[1]
+            : result;
+
+
+        resolve(base64);
+      };
+
+
+      reader.onerror =
+        reject;
+
+
+      reader.readAsDataURL(
+        file
+      );
+    }
+  );
+}
+
+
+/* =========================================================
+   GALLERY
+========================================================= */
+
+function openGallery() {
+
+  if (galleryInput) {
+
+    galleryInput.click();
+
+    return;
+  }
+
+
+  if (imageInput) {
+
+    imageInput.click();
+  }
+}
+
+
+/* =========================================================
+   IMAGE INPUT
+========================================================= */
+
+const actualImageInput =
+  imageInput ||
+  galleryInput;
+
+
+if (actualImageInput) {
+
+  actualImageInput.addEventListener(
+    "change",
+    async event => {
+
+      const file =
+        event.target.files?.[0];
+
+
+      if (!file) {
+        return;
+      }
+
+
+      if (
+        !file.type.startsWith(
+          "image/"
+        )
+      ) {
+
+        alert(
+          "Please select an image."
+        );
+
+        return;
+      }
+
+
+      try {
+
+        selectedImage =
+          await fileToBase64(
+            file
+          );
+
+        selectedImageMimeType =
+          file.type;
+
+
+        console.log(
+          "🖼️ Image selected:",
+          file.name
+        );
+
+
+        showFilePreview(
+          file,
+          "image"
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "Image error:",
+          error
+        );
+
+        alert(
+          "Image load failed."
+        );
+      }
+    }
+  );
+}
+
+
+/* =========================================================
+   CAMERA
+========================================================= */
+
+if (cameraInput) {
+
+  cameraInput.addEventListener(
+    "change",
+    async event => {
+
+      const file =
+        event.target.files?.[0];
+
+
+      if (!file) {
+        return;
+      }
+
+
+      try {
+
+        selectedImage =
+          await fileToBase64(
+            file
+          );
+
+        selectedImageMimeType =
+          file.type;
+
+
+        console.log(
+          "📷 Camera image selected."
+        );
+
+
+        showFilePreview(
+          file,
+          "image"
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "Camera image error:",
+          error
+        );
+      }
+    }
+  );
+}
+
+
+/* =========================================================
+   PDF INPUT
+========================================================= */
+
+if (pdfInput) {
+
+  pdfInput.addEventListener(
+    "change",
+    async event => {
+
+      const file =
+        event.target.files?.[0];
+
+
+      if (!file) {
+        return;
+      }
+
+
+      if (
+        file.type !==
+        "application/pdf"
+      ) {
+
+        alert(
+          "Please select a PDF file."
+        );
+
+        return;
+      }
+
+
+      try {
+
+        selectedPDF =
+          await fileToBase64(
+            file
+          );
+
+        selectedPDFMimeType =
+          file.type;
+
+        selectedPDFName =
+          file.name;
+
+
+        console.log(
+          "📄 PDF selected:",
+          file.name
+        );
+
+
+        showFilePreview(
+          file,
+          "pdf"
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "PDF error:",
+          error
+        );
+
+        alert(
+          "PDF load failed."
+        );
+      }
+    }
+  );
+}
+
+
+/* =========================================================
+   FILE PREVIEW
+========================================================= */
+
+function showFilePreview(
+  file,
+  type
+) {
+
+  let preview =
+    $("filePreview");
+
+
+  if (!preview) {
+
+    preview =
+      document.createElement(
+        "div"
+      );
+
+    preview.id =
+      "filePreview";
+
+
+    if (messageInput) {
+
+      messageInput
+        .parentElement
+        ?.appendChild(
+          preview
+        );
+    }
+  }
+
+
+  if (!preview) {
+    return;
+  }
+
+
+  preview.innerHTML = "";
+
+
+  preview.className =
+    "file-preview";
+
+
+  const icon =
+    type === "pdf"
+      ? "📄"
+      : "🖼️";
+
+
+  preview.innerHTML = `
+    <div class="selected-file">
+
+      <span class="selected-file-icon">
+        ${icon}
+      </span>
+
+      <span class="selected-file-name">
+        ${escapeHTML(
+          file.name
+        )}
+      </span>
+
+      <button
+        type="button"
+        id="removeSelectedFile"
+      >
+        ✕
+      </button>
+
+    </div>
+  `;
+
+
+  const removeButton =
+    $("removeSelectedFile");
+
+
+  if (removeButton) {
+
+    removeButton.addEventListener(
+      "click",
+      clearSelectedFiles
+    );
+  }
+}
+
+
+/* =========================================================
+   CLEAR FILES
+========================================================= */
+
+function clearSelectedFiles() {
+
+  selectedFile =
+    null;
+
+  selectedFileType =
+    null;
+
+  selectedImage =
+    null;
+
+  selectedImageMimeType =
+    null;
+
+  selectedPDF =
+    null;
+
+  selectedPDFMimeType =
+    null;
+
+  selectedPDFName =
+    null;
+
+
+  if (imageInput) {
+    imageInput.value = "";
+  }
+
+  if (galleryInput) {
+    galleryInput.value = "";
+  }
+
+  if (cameraInput) {
+    cameraInput.value = "";
+  }
+
+  if (pdfInput) {
+    pdfInput.value = "";
+  }
+
+
+  const preview =
+    $("filePreview");
+
+
+  if (preview) {
+    preview.innerHTML = "";
+    preview.className =
+      "file-preview";
+  }
+}
+
+
+/* =========================================================
+   GALLERY BUTTON FALLBACK
+========================================================= */
+
+const galleryButton =
+  $("galleryButton") ||
+  $("openGallery");
+
+
+if (galleryButton) {
+
+  galleryButton.addEventListener(
+    "click",
+    openGallery
+  );
+}
+
+
+/* =========================================================
+   PDF BUTTON FALLBACK
+========================================================= */
+
+const pdfButton =
+  $("pdfButton") ||
+  $("uploadPDF");
+
+
+if (pdfButton && pdfInput) {
+
+  pdfButton.addEventListener(
+    "click",
+    () => {
+
+      pdfInput.click();
+
+    }
+  );
+}
+
+
+/* =========================================================
+   CAMERA BUTTON FALLBACK
+========================================================= */
+
+const cameraButton =
+  $("cameraButton") ||
+  $("openCamera");
+
+
+if (cameraButton && cameraInput) {
+
+  cameraButton.addEventListener(
+    "click",
+    () => {
+
+      cameraInput.click();
+
+    }
+  );
+}
+
+
+/* =========================================================
+   COPY CODE
+========================================================= */
+
+document.addEventListener(
+  "click",
+  async event => {
+
+    const button =
+      event.target.closest(
+        ".copy-code-btn"
+      );
+
+
+    if (!button) {
+      return;
+    }
+
+
+    const code =
+      button.dataset.code || "";
 
 
     try {
 
-        let payload = {
-
-            message:
-                text,
-
-            capability:
-                capability
-        };
+      await navigator.clipboard.writeText(
+        code
+      );
 
 
-        // ==================================
-        // IMAGE
-        // ==================================
-
-        if (selectedImage) {
-
-            payload = {
-
-                message:
-                    text,
-
-                capability:
-                    capability,
-
-                image:
-                    stripDataUrlPrefix(
-                        selectedImage.dataUrl
-                    ),
-
-                imageMimeType:
-                    selectedImage.mimeType
-            };
-        }
+      const oldText =
+        button.textContent;
 
 
-        // ==================================
-        // PDF
-        // ==================================
-
-        else if (selectedPDF) {
-
-            payload = {
-
-                message:
-                    text,
-
-                capability:
-                    capability,
-
-                pdf:
-                    stripDataUrlPrefix(
-                        selectedPDF.dataUrl
-                    ),
-
-                pdfMimeType:
-                    selectedPDF.mimeType,
-
-                fileName:
-                    selectedPDF.name
-            };
-        }
+      button.textContent =
+        "Copied ✓";
 
 
-        // ==================================
-        // DEBUG
-        // ==================================
+      setTimeout(
+        () => {
 
-        console.log(
-            '📤 Sending request:',
-            {
-                capability:
-                    payload.capability,
+          button.textContent =
+            oldText;
 
-                hasImage:
-                    Boolean(payload.image),
+        },
+        1500
+      );
 
-                hasPDF:
-                    Boolean(payload.pdf),
-
-                messageLength:
-                    String(
-                        payload.message || ''
-                    ).length
-            }
-        );
-
-
-        // ==================================
-        // API REQUEST
-        // ==================================
-
-        const response =
-            await fetch(
-                API_URL,
-                {
-                    method: 'POST',
-
-                    headers: {
-                        'Content-Type':
-                            'application/json'
-                    },
-
-                    body:
-                        JSON.stringify(
-                            payload
-                        )
-                }
-            );
-
-
-        // ==================================
-        // READ RESPONSE
-        // ==================================
-
-        let data = {};
-
-        try {
-
-            data =
-                await response.json();
-
-        } catch (jsonError) {
-
-            throw new Error(
-                `Invalid server response (${response.status})`
-            );
-        }
-
-
-        if (!response.ok) {
-
-            console.error(
-                '❌ Backend error:',
-                data
-            );
-
-
-            throw new Error(
-                data.error ||
-                `Server error: ${response.status}`
-            );
-        }
-
-
-        const reply =
-            data.reply ||
-            data.message ||
-            'Sorry, I could not generate a response.';
-
-
-        console.log(
-            '✅ AI response:',
-            {
-                provider:
-                    data.provider,
-
-                model:
-                    data.model,
-
-                capability:
-                    capability
-            }
-        );
-
-
-        // ==================================
-        // AI TYPING
-        // ==================================
-
-        await typeAIResponse(
-            loadingBubble,
-            reply
-        );
-
-
-        // ==================================
-        // SAVE AI REPLY
-        // ==================================
-
-        saveChatMessage(
-            'ai',
-            reply
-        );
 
     } catch (error) {
 
-        console.error(
-            '❌ AI request error:',
-            error
+      console.error(
+        "Copy failed:",
+        error
+      );
+
+
+      /* Fallback */
+
+      const textarea =
+        document.createElement(
+          "textarea"
         );
 
 
-        const errorMessage =
-            '⚠️ Something went wrong. Please try again.';
+      textarea.value =
+        code;
 
 
-        replaceBubble(
-            loadingBubble,
-            errorMessage,
-            'error'
+      document.body.appendChild(
+        textarea
+      );
+
+
+      textarea.select();
+
+
+      try {
+        document.execCommand(
+          "copy"
         );
 
+        button.textContent =
+          "Copied ✓";
 
-        saveChatMessage(
-            'error',
-            errorMessage
-        );
-
-    } finally {
-
-        isWaitingForResponse =
-            false;
+      } catch {
+        button.textContent =
+          "Copy failed";
+      }
 
 
-        if (sendBtn) {
-            sendBtn.disabled =
-                false;
-        }
+      textarea.remove();
 
 
-        removeSelectedImage();
+      setTimeout(
+        () => {
 
-        removeSelectedPDF();
+          button.textContent =
+            "Copy";
 
-
-        messageInput?.focus();
+        },
+        1500
+      );
     }
-}
-
-
-// ==========================================
-// SEND BUTTON
-// ==========================================
-
-if (sendBtn) {
-
-    sendBtn.addEventListener(
-        'click',
-        sendMessage
-    );
-}
-
-
-// ==========================================
-// ENTER TO SEND
-// ==========================================
-
-if (messageInput) {
-
-    messageInput.addEventListener(
-        'keydown',
-        event => {
-
-            if (
-                event.key === 'Enter' &&
-                !event.shiftKey
-            ) {
-
-                event.preventDefault();
-
-                sendMessage();
-            }
-        }
-    );
-}
-
-
-// ==========================================
-// PLUS MENU
-// ==========================================
-
-function openPlusMenu() {
-
-    if (!plusMenuOverlay) {
-        return;
-    }
-
-
-    plusMenuOverlay.classList.add(
-        'show'
-    );
-}
-
-
-function closePlusMenu() {
-
-    if (!plusMenuOverlay) {
-        return;
-    }
-
-
-    plusMenuOverlay.classList.remove(
-        'show'
-    );
-}
-
-
-if (plusBtn) {
-
-    plusBtn.addEventListener(
-        'click',
-        event => {
-
-            event.stopPropagation();
-
-            openPlusMenu();
-        }
-    );
-}
-
-
-if (closePlusBtn) {
-
-    closePlusBtn.addEventListener(
-        'click',
-        closePlusMenu
-    );
-}
-
-
-if (plusMenuOverlay) {
-
-    plusMenuOverlay.addEventListener(
-        'click',
-        event => {
-
-            if (
-                event.target ===
-                plusMenuOverlay
-            ) {
-
-                closePlusMenu();
-            }
-        }
-    );
-}
-
-
-// ==========================================
-// COMING SOON
-// ==========================================
-
-function showComingSoon(
-    name
-) {
-
-    alert(
-        `${name} is coming soon to Infinity AI 🚀`
-    );
-}
-
-
-// ==========================================
-// GALLERY
-// ==========================================
-
-function openGallery() {
-
-    closePlusMenu();
-
-
-    if (galleryInput) {
-        galleryInput.click();
-    }
-}
-
-
-// ==========================================
-// CAMERA
-// ==========================================
-
-function openCamera() {
-
-    closePlusMenu();
-
-
-    if (cameraInput) {
-        cameraInput.click();
-    }
-}
-
-
-// ==========================================
-// PDF
-// ==========================================
-
-function openPDFPicker() {
-
-    closePlusMenu();
-
-
-    createPDFInput();
-
-
-    pdfInput.click();
-}
-
-
-// ==========================================
-// GALLERY CHANGE
-// ==========================================
-
-if (galleryInput) {
-
-    galleryInput.addEventListener(
-        'change',
-        async event => {
-
-            const file =
-                event.target.files?.[0];
-
-
-            if (!file) return;
-
-
-            if (
-                !file.type.startsWith(
-                    'image/'
-                )
-            ) {
-
-                alert(
-                    'Please select an image file.'
-                );
-
-
-                galleryInput.value =
-                    '';
-
-
-                return;
-            }
-
-
-            try {
-
-                const dataUrl =
-                    await readFileAsDataURL(
-                        file
-                    );
-
-
-                selectedImage = {
-
-                    file,
-
-                    dataUrl,
-
-                    name:
-                        file.name,
-
-                    mimeType:
-                        file.type ||
-                        'image/jpeg'
-                };
-
-
-                createImagePreview(
-                    file
-                );
-
-
-                messageInput?.focus();
-
-            } catch (error) {
-
-                console.error(
-                    'Image read error:',
-                    error
-                );
-
-
-                alert(
-                    'Could not read the image.'
-                );
-            }
-        }
-    );
-}
-
-
-// ==========================================
-// CAMERA CHANGE
-// ==========================================
-
-if (cameraInput) {
-
-    cameraInput.addEventListener(
-        'change',
-        async event => {
-
-            const file =
-                event.target.files?.[0];
-
-
-            if (!file) return;
-
-
-            try {
-
-                const dataUrl =
-                    await readFileAsDataURL(
-                        file
-                    );
-
-
-                selectedImage = {
-
-                    file,
-
-                    dataUrl,
-
-                    name:
-                        file.name ||
-                        'Camera Image',
-
-                    mimeType:
-                        file.type ||
-                        'image/jpeg'
-                };
-
-
-                createImagePreview(
-                    file
-                );
-
-
-                messageInput?.focus();
-
-            } catch (error) {
-
-                console.error(
-                    'Camera image error:',
-                    error
-                );
-
-
-                alert(
-                    'Could not read the camera image.'
-                );
-            }
-        }
-    );
-}
-
-
-// ==========================================
-// PLUS TOOLS
-// ==========================================
-
-toolItems.forEach(
-    tool => {
-
-        tool.addEventListener(
-            'click',
-            () => {
-
-                const action =
-                    tool.dataset.action ||
-                    tool.getAttribute(
-                        'data-tool'
-                    ) ||
-                    '';
-
-
-                if (
-                    action ===
-                        'gallery' ||
-                    action ===
-                        'image'
-                ) {
-
-                    openGallery();
-
-                    return;
-                }
-
-
-                if (
-                    action ===
-                    'camera'
-                ) {
-
-                    openCamera();
-
-                    return;
-                }
-
-
-                if (
-                    action ===
-                    'pdf'
-                ) {
-
-                    openPDFPicker();
-
-                    return;
-                }
-
-
-                const toolName =
-                    tool.querySelector(
-                        'strong'
-                    )?.textContent ||
-                    'This feature';
-
-
-                showComingSoon(
-                    toolName
-                );
-
-
-                closePlusMenu();
-            }
-        );
-    }
+  }
 );
 
 
-// ==========================================
-// ESCAPE KEY
-// ==========================================
+/* =========================================================
+   CLEAR CHAT
+========================================================= */
+
+const clearChatButton =
+  $("clearChat") ||
+  $("clearHistory") ||
+  $("clearChatButton");
+
+
+if (clearChatButton) {
+
+  clearChatButton.addEventListener(
+    "click",
+    () => {
+
+      localStorage.removeItem(
+        HISTORY_KEY
+      );
+
+
+      if (chatContainer) {
+
+        chatContainer.innerHTML =
+          "";
+      }
+
+
+      console.log(
+        "🗑️ Chat history cleared."
+      );
+    }
+  );
+}
+
+
+/* =========================================================
+   NEW CHAT
+========================================================= */
+
+const newChatButton =
+  $("newChat");
+
+
+if (newChatButton) {
+
+  newChatButton.addEventListener(
+    "click",
+    () => {
+
+      if (chatContainer) {
+
+        chatContainer.innerHTML =
+          "";
+      }
+
+
+      messageInput?.focus();
+    }
+  );
+}
+
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
 
 document.addEventListener(
-    'keydown',
-    event => {
+  "DOMContentLoaded",
+  () => {
 
-        if (
-            event.key !==
-            'Escape'
-        ) {
-
-            return;
-        }
-
-
-        closePlusMenu();
-
-        closeHistory();
-    }
-);
-
-
-// ==========================================
-// BOTTOM NAV
-// ==========================================
-
-navItems.forEach(
-    item => {
-
-        item.addEventListener(
-            'click',
-            () => {
-
-                navItems.forEach(
-                    nav => {
-                        nav.classList.remove(
-                            'active'
-                        );
-                    }
-                );
-
-
-                item.classList.add(
-                    'active'
-                );
-
-
-                const tab =
-                    item.dataset.tab ||
-                    item.dataset.nav ||
-                    '';
-
-
-                if (
-                    tab ===
-                    'chat'
-                ) {
-
-                    return;
-                }
-
-
-                if (
-                    tab ===
-                    'history'
-                ) {
-
-                    openHistory();
-
-                    return;
-                }
-
-
-                if (
-                    tab ===
-                    'home'
-                ) {
-
-                    return;
-                }
-
-
-                if (tab) {
-
-                    showComingSoon(
-                        item.textContent.trim()
-                    );
-                }
-            }
-        );
-    }
-);
-
-
-// ==========================================
-// INITIALIZE
-// ==========================================
-
-loadHistory();
-
-
-const currentConversation =
-    getCurrentConversation();
-
-
-if (currentConversation) {
-
-    renderConversationMessages(
-        currentConversation
-    );
-
-} else {
-
-    showWelcomeMessage();
-}
-
-
-renderConversationList();
-
-
-createPDFInput();
-
-
-if (aiModel) {
-
-    /*
-     * Keep existing HTML selection if possible.
-     * If nothing is selected, use Gemini.
-     */
-    if (!aiModel.value) {
-
-        aiModel.value =
-            'gemini';
-    }
-}
-
-
-updateModelStatus();
-
-
-const chatTab =
-    document.querySelector(
-        '.nav-item[data-tab="chat"], .nav-item[data-nav="chat"]'
+    console.log(
+      "🚀 Infinity AI frontend loaded."
     );
 
 
-if (chatTab) {
-
-    chatTab.classList.add(
-        'active'
+    console.log(
+      "🌐 API:",
+      API_URL
     );
-}
 
 
-if (messageInput) {
-    messageInput.focus();
-}
+    console.log(
+      "🤖 Capability:",
+      getSelectedCapability()
+    );
 
 
-// ==========================================
-// CONSOLE
-// ==========================================
+    loadHistory();
 
-console.log(
-    '================================'
+  }
 );
 
-console.log(
-    '🚀 Infinity AI initialized'
-);
+
+/* =========================================================
+   GLOBAL FUNCTIONS
+========================================================= */
+
+window.sendMessage =
+  sendMessage;
+
+window.openGallery =
+  openGallery;
+
+window.clearSelectedFiles =
+  clearSelectedFiles;
+
+window.getSelectedCapability =
+  getSelectedCapability;
+
+
+/* =========================================================
+   END
+========================================================= */
 
 console.log(
-    '🧠 AI API:',
-    API_URL
-);
-
-console.log(
-    '🎯 Selected capability:',
-    getSelectedCapability()
-);
-
-console.log(
-    '💬 Chat History:',
-    conversations.length
-);
-
-console.log(
-    '⌨️ Typing Animation: Ready'
-);
-
-console.log(
-    '📝 Markdown Renderer: Ready'
-);
-
-console.log(
-    '💻 Code Blocks: Ready'
-);
-
-console.log(
-    '📄 PDF system: Ready'
-);
-
-console.log(
-    '🖼️ Image system: Ready'
-);
-
-console.log(
-    '➕ Plus Menu: Ready'
-);
-
-console.log(
-    '🤖 ChatGPT Routing: Ready'
-);
-
-console.log(
-    '🔥 Groq Routing: Ready'
-);
-
-console.log(
-    '================================'
+  "✅ Infinity AI app.js ready."
 );
